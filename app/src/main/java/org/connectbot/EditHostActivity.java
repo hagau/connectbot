@@ -22,24 +22,33 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.ServiceConnection;
 import android.content.res.TypedArray;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
+import org.connectbot.bean.AgentBean;
 import org.connectbot.bean.HostBean;
+import org.connectbot.service.AgentManager;
 import org.connectbot.service.TerminalBridge;
 import org.connectbot.service.TerminalManager;
+import org.connectbot.util.AgentDatabase;
+import org.connectbot.util.AgentRequest;
 import org.connectbot.util.HostDatabase;
 import org.connectbot.util.PubkeyDatabase;
 
@@ -54,6 +63,7 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 	private PubkeyDatabase mPubkeyDb;
 	private ServiceConnection mTerminalConnection;
 	private HostBean mHost;
+	private AgentBean mAgentBean;
 	private TerminalBridge mBridge;
 	private boolean mIsCreating;
 	private MenuItem mSaveHostButton;
@@ -126,6 +136,8 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 
 		defaultPubkeyNames.recycle();
 		defaultPubkeyValues.recycle();
+
+		AgentManager.get().registerWithAgentManager(getApplicationContext(), agentHandler);
 	}
 
 	@Override
@@ -194,6 +206,25 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 	}
 
 	@Override
+	public void onDestroy() {
+		super.onDestroy();
+
+		AgentManager.get().unRegisterWithAgentManager();
+	}
+
+	@Override
+	public void onPause() {
+		super.onPause();
+		Log.d(getClass().toString(), "onPause called");
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		Log.d(getClass().toString(), "onResume called");
+	}
+
+	@Override
 	public void onValidHostConfigured(HostBean host) {
 		mHost = host;
 		if (mSaveHostButton != null)
@@ -205,6 +236,16 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 		mHost = null;
 		if (mSaveHostButton != null)
 			setAddSaveButtonEnabled(false);
+	}
+
+	@Override
+	public void onAgentConfigured(AgentBean agentBean) {
+		mAgentBean = agentBean;
+	}
+
+	@Override
+	public void onAgentRemoved() {
+		mAgentBean = null;
 	}
 
 	@Override
@@ -220,6 +261,18 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 		if (mHost == null) {
 			showDiscardDialog();
 			return;
+		}
+		// check if there has been an agent selected
+		if (mAgentBean != null) {
+			AgentDatabase agentDatabase = AgentDatabase.get(getApplicationContext());
+			// delete the old one
+			long oldAgentId = mHost.getAuthAgentId();
+			if (oldAgentId != HostDatabase.AGENTID_NONE) {
+				agentDatabase.deleteAgentById(oldAgentId);
+			}
+			// save the new one
+			agentDatabase.saveAgent(mAgentBean);
+			mHost.setAuthAgentId(mAgentBean.getId());
 		}
 
 		mHostDb.saveHost(mHost);
@@ -296,4 +349,34 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 			return mInitialized;
 		}
 	}
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
+
+		Handler handler = AgentManager.get().getPendingIntentResultHandler();
+
+		Bundle bundle = new Bundle();
+		bundle.putParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT_RESULT, data);
+
+		Message message = handler.obtainMessage();
+		message.setData(bundle);
+
+		handler.sendMessage(message);
+    }
+
+	private Handler agentHandler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			PendingIntent pendingIntent = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT);
+			try {
+				Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
+				startIntentSenderForResult(pendingIntent.getIntentSender(), AgentRequest.AGENT_REQUEST_CODE, null, 0, 0, 0);
+			} catch (IntentSender.SendIntentException e) {
+				e.printStackTrace();
+			}
+		}
+	};
 }

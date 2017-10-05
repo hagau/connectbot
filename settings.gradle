@@ -1,1 +1,4 @@
-include ':app'
+include ':app', ':sshlib'
+project(':sshlib').projectDir = new File(settingsDir, '../sshlib/sshlib')
+include ':sshagent-api'
+project(':sshagent-api').projectDir = new File(settingsDir, '../open-keychain/sshagent-api')

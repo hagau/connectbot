@@ -22,21 +22,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.connectbot.bean.HostBean;
+import org.connectbot.service.AgentManager;
 import org.connectbot.service.BridgeDisconnectedListener;
 import org.connectbot.service.PromptHelper;
 import org.connectbot.service.TerminalBridge;
 import org.connectbot.service.TerminalKeyListener;
 import org.connectbot.service.TerminalManager;
+import org.connectbot.util.AgentRequest;
 import org.connectbot.util.PreferenceConstants;
 import org.connectbot.util.TerminalViewPager;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Dialog;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
@@ -475,6 +479,7 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
 
+		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
 			StrictModeSetup.run();
 		}
@@ -731,7 +736,10 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 					}
 				}
 			});
+
+		AgentManager.get().registerWithAgentManager(getApplicationContext(), agentHandler);
 	}
+
 
 	private void addKeyRepeater(View view) {
 		KeyRepeater keyRepeater = new KeyRepeater(keyRepeatHandler, view);
@@ -1097,6 +1105,12 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 	}
 
 	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		AgentManager.get().unRegisterWithAgentManager();
+	}
+
+	@Override
 	public void onSaveInstanceState(Bundle savedInstanceState) {
 		// Maintain selected host if connected.
 		TerminalView currentTerminalView = adapter.getCurrentTerminalView();
@@ -1367,4 +1381,35 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 			return (TerminalView) currentView.findViewById(R.id.terminal_view);
 		}
 	}
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
+
+//		AgentManager.get().processPendingIntentResult(data);
+
+		Handler handler = AgentManager.get().getPendingIntentResultHandler();
+
+		Bundle bundle = new Bundle();
+		bundle.putParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT_RESULT, data);
+
+		Message message = handler.obtainMessage();
+		message.setData(bundle);
+
+		handler.sendMessage(message);
+    }
+
+	private Handler agentHandler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			PendingIntent pendingIntent = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT);
+			try {
+				Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
+				startIntentSenderForResult(pendingIntent.getIntentSender(), AgentRequest.AGENT_REQUEST_CODE, null, 0, 0, 0);
+			} catch (IntentSender.SendIntentException e) {
+				e.printStackTrace();
+			}
+		}
+	};
 }

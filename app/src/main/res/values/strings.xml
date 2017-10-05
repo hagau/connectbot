@@ -322,6 +322,8 @@
 	<!-- Preference selection to indicate never to use special shortcut keys. -->
 	<string name="list_keymode_none">"Disable"</string>
 
+	<!-- Preference to use a ssh agent to authenticate to this host. -->
+	<string name="list_pubkeyids_agent">"Use a SSH Agent"</string>
 	<!-- Preference to not use pubkeys to authenticate to this host. -->
 	<string name="list_pubkeyids_none">"Do not use keys"</string>
 	<!-- Preference to use any pubkey to authenticate to this host. -->
@@ -673,4 +675,25 @@
 	     Added to the end of a key description to indicate that the key is encrypted (i.e,
 	     password protected). -->
 	<string name="key_attribute_encrypted">(encrypted)</string>
+    <string name="selected_Agent_res">Selected Agent:</string>
+	<string name="Agent_selection_failed">Agent selection failed</string>
+	<string name="Agent_selection_cancelled">Agent selection cancelled</string>
+	<string name="Agent_selection_successful">Agent selection successful</string>
+	<string name="No_SSH_Agents_installed">No SSH-Agents installed</string>
+	<string name="Problem_requested_URI">Problem while trying to create new requested bridge from URI</string>
+	<string name="Unknown">Unknown</string>
+	<string name="Attempting_to_authenticate">Attempting to authenticate with an ssh-agent</string>
+	<string name="SSH_Agent_could_not_be_find">The ssh-agent couldn\'t be found</string>
+	<string name="Calling_ssh_agent">Calling ssh-agent:</string>
+	<string name="Failed_to_authenticate_with_ssh_agent">Failed to authenticate with an ssh-agent</string>
+	<string name="ConnectBot_BackupAgent">ConnectBot.BackupAgent</string>
+	<string name="OnCreate_Called">onCreate called</string>
+	<string name="Preferences">_preferences</string>
+	<string name="Databases">../databases/</string>
+	<string name="android_intent_action_view">android.intent.action.VIEW</string>
+	<string name="OnReceived_called">onReceived() called:</string>
+	<string name="OnReceive_called_NoConnectivity">onReceived() called; noConnectivity?</string>
+	<string name="Fail_over">; isFailover?</string>
+	<string name="Transport_Found">No transport found for</string>
+	<string name="Could_not_inject_String">Couldn\'t inject string to remote host:</string>
 </resources>
