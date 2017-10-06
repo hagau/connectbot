@@ -18,17 +18,21 @@
 package org.connectbot.util;
 
 import java.io.IOException;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 
 import org.connectbot.bean.AgentBean;
 import org.openintents.ssh.KeySelectionRequest;
 import org.openintents.ssh.KeySelectionResponse;
+import org.openintents.ssh.SSHAgentApi;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.os.ResultReceiver;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 
@@ -56,16 +60,57 @@ public class AgentKeySelectionManager {
 
 		if (resultCode == KeySelectionResponse.RESULT_CODE_SUCCESS) {
 			Bundle bundle = new Bundle();
+
+			PublicKey publicKey = getPublicKey(response.getEncodedPublicKey(), response.getKeyAlgorithm());
+			if (publicKey == null) {
+				message.what = KeySelectionResponse.RESULT_CODE_ERROR;
+				message.sendToTarget();
+				return;
+			}
+
 			AgentBean agentBean = new AgentBean(response.getKeyID(),
-					response.getPublicKey().getAlgorithm(),
+					publicKey.getAlgorithm(),
 					agentName,
-					response.getPublicKey().getEncoded());
+					publicKey.getEncoded());
 
 			bundle.putParcelable(AGENT_BEAN, agentBean);
 			message.setData(bundle);
 		}
 
 		message.sendToTarget();
+	}
+
+	private PublicKey getPublicKey(byte[] encodedPublicKey, String algorithm) {
+        PublicKey publicKey = null;
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(encodedPublicKey);
+        try {
+			algorithm = translateAlgorithm(algorithm);
+			KeyFactory kf = KeyFactory.getInstance(algorithm);
+			publicKey = kf.generatePublic(spec);
+//			publicKey = PubkeyUtils.decodePublic(encodedPublicKey, algorithm);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+			return null;
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+			return null;
+        }
+		return publicKey;
+	}
+
+	private String translateAlgorithm(String algorithm) throws NoSuchAlgorithmException {
+		switch (algorithm) {
+		case SSHAgentApi.RSA:
+			return "RSA";
+		case SSHAgentApi.DSA:
+			return "DSA";
+		case SSHAgentApi.ECDSA:
+			return "EC";
+		case SSHAgentApi.EDDSA:
+			return "Ed25519";
+		default:
+			throw new NoSuchAlgorithmException("Algorithm not supported: "+ algorithm);
+		}
 	}
 
 	private KeySelectionResponse getKey(String targetPackage) throws IOException {
