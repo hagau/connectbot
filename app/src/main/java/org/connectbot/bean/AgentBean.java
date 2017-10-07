@@ -17,16 +17,15 @@
 
 package org.connectbot.bean;
 
+import org.connectbot.R;
+import org.connectbot.util.AgentDatabase;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Parcel;
 import android.os.Parcelable;
-
-import org.connectbot.R;
-import org.connectbot.util.AgentDatabase;
-import org.openintents.ssh.SSHAgentApi;
 
 public class AgentBean extends AbstractBean implements Parcelable {
     public static final String BEAN_NAME = "agent";
@@ -38,19 +37,14 @@ public class AgentBean extends AbstractBean implements Parcelable {
 
 	private String packageName;
 
-    // TODO: deprecate
-    private String serviceName;
+	private String description;
 
+    public AgentBean() {}
 
-
-    public AgentBean() {
-
-    }
-
-    public AgentBean(String keyIdentifier, String keyType , String packageName, byte[] publicKey) {
+    public AgentBean(String keyIdentifier, String keyType , String packageName, String description, byte[] publicKey) {
         this.keyIdentifier = keyIdentifier;
         this.keyType = keyType;
-        this.serviceName = SSHAgentApi.SERVICE_INTENT;
+		this.description = description;
         this.packageName = packageName;
         this.publicKey = publicKey;
     }
@@ -59,9 +53,9 @@ public class AgentBean extends AbstractBean implements Parcelable {
 		id = in.readLong();
 		keyIdentifier = in.readString();
 		keyType = in.readString();
+		description = in.readString();
 		publicKey = in.createByteArray();
 		packageName = in.readString();
-		serviceName = in.readString();
 	}
 
 	@Override
@@ -69,9 +63,9 @@ public class AgentBean extends AbstractBean implements Parcelable {
 		dest.writeLong(id);
 		dest.writeString(keyIdentifier);
 		dest.writeString(keyType);
+		dest.writeString(description);
 		dest.writeByteArray(publicKey);
 		dest.writeString(packageName);
-		dest.writeString(serviceName);
 	}
 
 	public static final Creator<AgentBean> CREATOR = new Creator<AgentBean>() {
@@ -110,14 +104,6 @@ public class AgentBean extends AbstractBean implements Parcelable {
         this.keyIdentifier = keyIdentifier;
     }
 
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
-
     public String getPackageName() {
         return packageName;
     }
@@ -125,6 +111,14 @@ public class AgentBean extends AbstractBean implements Parcelable {
     public void setPackageName(String packageName) {
         this.packageName = packageName;
     }
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getDescription() {
+		return description;
+	}
 
     public byte[] getPublicKey() {
         if (publicKey != null) {
@@ -159,8 +153,8 @@ public class AgentBean extends AbstractBean implements Parcelable {
 
         values.put(AgentDatabase.FIELD_AGENT_KEY_IDENTIFIER, keyIdentifier);
         values.put(AgentDatabase.FIELD_AGENT_KEY_TYPE, keyType);
-        values.put(AgentDatabase.FIELD_AGENT_PACKAGE_NAME, packageName);
-        values.put(AgentDatabase.FIELD_AGENT_SERVICE_NAME, serviceName);
+        values.put(AgentDatabase.FIELD_AGENT_DESCRIPTION, description);
+		values.put(AgentDatabase.FIELD_AGENT_PACKAGE_NAME, packageName);
         values.put(AgentDatabase.FIELD_AGENT_PUBLIC_KEY, publicKey);
 
         return values;

@@ -17,16 +17,15 @@
 
 package org.connectbot.util;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import org.connectbot.bean.AgentBean;
+
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
-
-import org.connectbot.bean.AgentBean;
-import org.connectbot.bean.PubkeyBean;
-
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * The agent database stores necessary data about connected agents. The data is then used to call
@@ -43,11 +42,9 @@ public class AgentDatabase extends RobustSQLiteOpenHelper {
 
     public static final String FIELD_AGENT_KEY_IDENTIFIER = "keyidentifier";
     public static final String FIELD_AGENT_KEY_TYPE = "keytype";
-    public static final String FIELD_AGENT_SERVICE_NAME = "servicename";
+    public static final String FIELD_AGENT_DESCRIPTION = "description";
     public static final String FIELD_AGENT_PACKAGE_NAME = "packagename";
     public static final String FIELD_AGENT_PUBLIC_KEY = "publickey";
-
-    private Context context;
 
     static {
         addTableName(TABLE_AGENTS);
@@ -74,7 +71,6 @@ public class AgentDatabase extends RobustSQLiteOpenHelper {
     private AgentDatabase(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
 
-        this.context = context;
         mDataBase = getWritableDatabase();
     }
 
@@ -89,7 +85,7 @@ public class AgentDatabase extends RobustSQLiteOpenHelper {
                 "_id INTEGER PRIMARY KEY,"
                 + FIELD_AGENT_KEY_IDENTIFIER + " TEXT, "
                 + FIELD_AGENT_KEY_TYPE + " TEXT, "
-                + FIELD_AGENT_SERVICE_NAME + " TEXT, "
+                + FIELD_AGENT_DESCRIPTION + " TEXT, "
                 + FIELD_AGENT_PACKAGE_NAME + " TEXT, "
                 + FIELD_AGENT_PUBLIC_KEY + " BLOB)"
         );
@@ -165,7 +161,7 @@ public class AgentDatabase extends RobustSQLiteOpenHelper {
         final int COL_ID = c.getColumnIndexOrThrow("_id"),
                 COL_KEY_IDENTIFIER = c.getColumnIndexOrThrow(FIELD_AGENT_KEY_IDENTIFIER),
                 COL_KEY_TYPE = c.getColumnIndexOrThrow(FIELD_AGENT_KEY_TYPE),
-                COL_SERVICE_NAME = c.getColumnIndexOrThrow(FIELD_AGENT_SERVICE_NAME),
+                COL_DESCRIPTION = c.getColumnIndexOrThrow(FIELD_AGENT_DESCRIPTION),
                 COL_PACKAGE_NAME = c.getColumnIndexOrThrow(FIELD_AGENT_PACKAGE_NAME),
                 COL_PUBLIC_KEY = c.getColumnIndexOrThrow(FIELD_AGENT_PUBLIC_KEY);
 
@@ -175,7 +171,7 @@ public class AgentDatabase extends RobustSQLiteOpenHelper {
             agent.setId(c.getLong(COL_ID));
             agent.setKeyIdentifier(c.getString(COL_KEY_IDENTIFIER));
             agent.setKeyType(c.getString(COL_KEY_TYPE));
-            agent.setServiceName(c.getString(COL_SERVICE_NAME));
+            agent.setDescription(c.getString(COL_DESCRIPTION));
             agent.setPackageName(c.getString(COL_PACKAGE_NAME));
             agent.setPublicKey(c.getBlob(COL_PUBLIC_KEY));
 
