@@ -46,12 +46,7 @@ public class AgentKeySelectionManager {
 
 		Log.d(getClass().toString(), "====>>>> selectKeyFromAgent tid: "+ android.os.Process.myTid());
 
-		KeySelectionResponse response = null;
-		try {
-			response = getKey(agentName);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		KeySelectionResponse response = getKey(agentName);
 
 		assert response != null; // response is never null anyway, so silence the warning
 		int resultCode = response.getResultCode();
@@ -61,17 +56,23 @@ public class AgentKeySelectionManager {
 		if (resultCode == KeySelectionResponse.RESULT_CODE_SUCCESS) {
 			Bundle bundle = new Bundle();
 
-			PublicKey publicKey = getPublicKey(response.getEncodedPublicKey(), response.getKeyAlgorithm());
+			byte[] encodedPublicKey = response.getEncodedPublicKey();
+			int algorithm = response.getKeyAlgorithm();
+			int format = response.getKeyFormat();
+
+			PublicKey publicKey = getPublicKey(encodedPublicKey, algorithm, format);
 			if (publicKey == null) {
 				message.what = KeySelectionResponse.RESULT_CODE_ERROR;
 				message.sendToTarget();
 				return;
 			}
 
-			AgentBean agentBean = new AgentBean(response.getKeyID(),
-					publicKey.getAlgorithm(),
-					agentName,
-					publicKey.getEncoded());
+			AgentBean agentBean = new AgentBean();
+			agentBean.setKeyIdentifier(response.getKeyID());
+			agentBean.setKeyType(publicKey.getAlgorithm());
+			agentBean.setPackageName(agentName);
+			agentBean.setDescription(response.getKeyDescription());
+			agentBean.setPublicKey(publicKey.getEncoded());
 
 			bundle.putParcelable(AGENT_BEAN, agentBean);
 			message.setData(bundle);
@@ -80,25 +81,26 @@ public class AgentKeySelectionManager {
 		message.sendToTarget();
 	}
 
-	private PublicKey getPublicKey(byte[] encodedPublicKey, String algorithm) {
+	private PublicKey getPublicKey(byte[] encodedPublicKey, int algorithmFlag, int format) {
         PublicKey publicKey = null;
-        X509EncodedKeySpec spec = new X509EncodedKeySpec(encodedPublicKey);
-        try {
-			algorithm = translateAlgorithm(algorithm);
-			KeyFactory kf = KeyFactory.getInstance(algorithm);
-			publicKey = kf.generatePublic(spec);
+		if (format == SSHAgentApi.X509) {
+			X509EncodedKeySpec spec = new X509EncodedKeySpec(encodedPublicKey);
+			try {
+				KeyFactory kf = KeyFactory.getInstance(translateAlgorithm(algorithmFlag));
+				publicKey = kf.generatePublic(spec);
 //			publicKey = PubkeyUtils.decodePublic(encodedPublicKey, algorithm);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-			return null;
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-			return null;
-        }
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+				return null;
+			} catch (InvalidKeySpecException e) {
+				e.printStackTrace();
+				return null;
+			}
+		}
 		return publicKey;
 	}
 
-	private String translateAlgorithm(String algorithm) throws NoSuchAlgorithmException {
+	private String translateAlgorithm(int algorithm) throws NoSuchAlgorithmException {
 		switch (algorithm) {
 		case SSHAgentApi.RSA:
 			return "RSA";
@@ -113,7 +115,7 @@ public class AgentKeySelectionManager {
 		}
 	}
 
-	private KeySelectionResponse getKey(String targetPackage) throws IOException {
+	private KeySelectionResponse getKey(String targetPackage) {
 
 		Intent request = new KeySelectionRequest().toIntent();
 

@@ -49,7 +49,7 @@ public class SSHAgentSignatureProxy extends SignatureProxy {
     public byte[] sign(final byte[] challenge, final String hashAlgorithm) throws IOException {
 		Log.d(getClass().toString(), "====>>>> executing sign in tid: "+ android.os.Process.myTid());
 
-        Intent request = new SigningRequest(challenge, agentBean.getKeyIdentifier(), hashAlgorithm).toIntent();
+        Intent request = new SigningRequest(challenge, agentBean.getKeyIdentifier(), translateHashAlgorithm(hashAlgorithm)).toIntent();
 
 		AgentRequest agentRequest = new AgentRequest(request, agentBean.getPackageName());
 
@@ -64,7 +64,18 @@ public class SSHAgentSignatureProxy extends SignatureProxy {
 		return signature;
     }
 
-    public static class Builder {
+	private int translateHashAlgorithm(String hashAlgorithm) {
+		switch (hashAlgorithm) {
+		case SignatureProxy.SHA1:
+			return SSHAgentApi.SHA1;
+		case SignatureProxy.SHA512:
+			return SSHAgentApi.SHA512;
+		default:
+			return SSHAgentApi.INVALID_HASH_ALGORITHM;
+		}
+	}
+
+	public static class Builder {
         private AgentBean agentBean;
 
         public Builder(AgentBean agentBean) {

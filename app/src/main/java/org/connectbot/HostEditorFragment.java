@@ -535,7 +535,7 @@ public class HostEditorFragment extends Fragment {
 				AgentBean agentBean = msg.getData().getParcelable(AGENT_BEAN);
 
 				mListener.onAgentConfigured(agentBean);
-				mPubkeyText.setText(getString(R.string.selected_Agent_res) + agentBean.getAgentAppName(getContext()) + " (" + agentBean.getKeyIdentifier() + ")");
+				mPubkeyText.setText(getString(R.string.selected_Agent_res) +" "+ agentBean.getDescription());
 				Toast.makeText(getContext(), R.string.Agent_selection_successful, Toast.LENGTH_SHORT).show();
 			} else if (resultCode == KeySelectionResponse.RESULT_CODE_CANCEL) {
 				Toast.makeText(getContext(), R.string.Agent_selection_cancelled, Toast.LENGTH_SHORT).show();
