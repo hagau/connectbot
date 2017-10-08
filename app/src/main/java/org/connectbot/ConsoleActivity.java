@@ -28,12 +28,14 @@ import org.connectbot.service.PromptHelper;
 import org.connectbot.service.TerminalBridge;
 import org.connectbot.service.TerminalKeyListener;
 import org.connectbot.service.TerminalManager;
+import org.connectbot.util.AgentHandler;
 import org.connectbot.util.AgentRequest;
 import org.connectbot.util.PreferenceConstants;
 import org.connectbot.util.TerminalViewPager;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.ComponentName;
@@ -1400,16 +1402,5 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 		handler.sendMessage(message);
     }
 
-	private Handler agentHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			PendingIntent pendingIntent = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT);
-			try {
-				Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
-				startIntentSenderForResult(pendingIntent.getIntentSender(), AgentRequest.AGENT_REQUEST_CODE, null, 0, 0, 0);
-			} catch (IntentSender.SendIntentException e) {
-				e.printStackTrace();
-			}
-		}
-	};
+	private Handler agentHandler = new AgentHandler(new WeakReference<>((Activity) this));
 }

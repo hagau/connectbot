@@ -17,17 +17,17 @@
 
 package org.connectbot;
 
+import java.lang.ref.WeakReference;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import android.app.PendingIntent;
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.ServiceConnection;
 import android.content.res.TypedArray;
 import android.os.AsyncTask;
@@ -48,6 +48,7 @@ import org.connectbot.service.AgentManager;
 import org.connectbot.service.TerminalBridge;
 import org.connectbot.service.TerminalManager;
 import org.connectbot.util.AgentDatabase;
+import org.connectbot.util.AgentHandler;
 import org.connectbot.util.AgentRequest;
 import org.connectbot.util.HostDatabase;
 import org.connectbot.util.PubkeyDatabase;
@@ -367,16 +368,6 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 		handler.sendMessage(message);
     }
 
-	private Handler agentHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			PendingIntent pendingIntent = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT);
-			try {
-				Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
-				startIntentSenderForResult(pendingIntent.getIntentSender(), AgentRequest.AGENT_REQUEST_CODE, null, 0, 0, 0);
-			} catch (IntentSender.SendIntentException e) {
-				e.printStackTrace();
-			}
-		}
-	};
+	private Handler agentHandler = new AgentHandler(new WeakReference<>((Activity) this));
+
 }

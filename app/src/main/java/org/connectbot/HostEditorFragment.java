@@ -17,6 +17,7 @@
 
 package org.connectbot;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -41,6 +42,7 @@ import android.content.res.TypedArray;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Message;
 import android.os.Parcelable;
 import android.support.design.widget.TextInputLayout;
@@ -526,24 +528,7 @@ public class HostEditorFragment extends Fragment {
 		thread.start();
 	}
 
-	private Handler updateAgentHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			int resultCode = msg.what;
-
-			if (resultCode == KeySelectionResponse.RESULT_CODE_SUCCESS) {
-				AgentBean agentBean = msg.getData().getParcelable(AGENT_BEAN);
-
-				mListener.onAgentConfigured(agentBean);
-				mPubkeyText.setText(getString(R.string.selected_Agent_res) +" "+ agentBean.getDescription());
-				Toast.makeText(getContext(), R.string.Agent_selection_successful, Toast.LENGTH_SHORT).show();
-			} else if (resultCode == KeySelectionResponse.RESULT_CODE_CANCEL) {
-				Toast.makeText(getContext(), R.string.Agent_selection_cancelled, Toast.LENGTH_SHORT).show();
-			} else {
-				Toast.makeText(getContext(), R.string.Agent_selection_failed, Toast.LENGTH_SHORT).show();
-			}
-		}
-	};
+	private Handler updateAgentHandler = new UpdateAgentHandler(new WeakReference<>(this));
 
 	private String selectAgent() {
 		// TODO: implement GUI for selecting agent, pick last entry for now
@@ -838,6 +823,37 @@ public class HostEditorFragment extends Fragment {
 			return HostDatabase.FIELD_HOST_USERNAME.equals(fieldType) ||
 					HostDatabase.FIELD_HOST_HOSTNAME.equals(fieldType) ||
 					HostDatabase.FIELD_HOST_PORT.equals(fieldType);
+		}
+	}
+
+	private static class UpdateAgentHandler extends Handler {
+		private WeakReference<HostEditorFragment> fragmentWeakReference;
+
+		public UpdateAgentHandler(WeakReference<HostEditorFragment> fragmentWeakReference) {
+			this.fragmentWeakReference = fragmentWeakReference;
+		}
+
+		@Override
+		public void handleMessage(Message msg) {
+			HostEditorFragment hostEditorFragment = fragmentWeakReference.get();
+			if (hostEditorFragment == null) {
+				return;
+			}
+			Context context = hostEditorFragment.getContext();
+			int resultCode = msg.what;
+
+			if (resultCode == KeySelectionResponse.RESULT_CODE_SUCCESS) {
+				AgentBean agentBean = msg.getData().getParcelable(AGENT_BEAN);
+
+				hostEditorFragment.mListener.onAgentConfigured(agentBean);
+				String description = hostEditorFragment.getString(R.string.selected_Agent_res) +" "+ agentBean.getDescription();
+				hostEditorFragment.mPubkeyText.setText(description);
+				Toast.makeText(context, R.string.Agent_selection_successful, Toast.LENGTH_SHORT).show();
+			} else if (resultCode == KeySelectionResponse.RESULT_CODE_CANCEL) {
+				Toast.makeText(context, R.string.Agent_selection_cancelled, Toast.LENGTH_SHORT).show();
+			} else {
+				Toast.makeText(context, R.string.Agent_selection_failed, Toast.LENGTH_SHORT).show();
+			}
 		}
 	}
 }
