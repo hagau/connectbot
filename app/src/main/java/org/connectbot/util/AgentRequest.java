@@ -25,6 +25,9 @@ public class AgentRequest {
 	public static String AGENT_REQUEST_PENDINGINTENT= "org.connectbot.util.AgentRequest.PENDINGINTENT";
 	public static int AGENT_REQUEST_CODE = 0;
 
+	public static final String REQUEST_ID = "request_id";
+	public static final int REQUEST_ID_NONE = -1;
+
 	public interface OnAgentResultCallback {
 		void onAgentResult(Intent data);
 	}
@@ -34,6 +37,8 @@ public class AgentRequest {
 	private String mTargetPackage;
 
 	private Intent mRequest;
+
+	private int mRequestId = REQUEST_ID_NONE;
 
 	public AgentRequest(Intent request, String targetPackage) {
 		mRequest = request;
@@ -62,5 +67,14 @@ public class AgentRequest {
 
 	public void setRequest(Intent request) {
 		this.mRequest = request;
+	}
+
+	public int getRequestId() {
+		return mRequestId;
+	}
+
+	public void setRequestId(int requestId) {
+		mRequestId = requestId;
+		mRequest.putExtra(REQUEST_ID, requestId);
 	}
 }

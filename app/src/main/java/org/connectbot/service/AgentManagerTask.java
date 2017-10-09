@@ -17,10 +17,6 @@
 
 package org.connectbot.service;
 
-import java.util.HashMap;
-import java.util.HashSet;
-
-import org.connectbot.bean.AgentBean;
 import org.connectbot.util.AgentRequest;
 import org.openintents.ssh.ISSHAgentService;
 import org.openintents.ssh.SSHAgentApi;
@@ -30,6 +26,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
@@ -39,39 +36,29 @@ import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-public class AgentManager extends Service {
+public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 
 	private Handler mActivityHandler;
+	private Context mAppContext;
 
-	private HashMap<Integer, AgentRequest> mAgentRequests = new HashMap<>();
-
-	public class AgentBinder extends Binder {
-		public AgentManager getService() {
-			return AgentManager.this;
-		}
-	}
-	private final IBinder mAgentBinder = new AgentBinder();
-
-	@Nullable
-	@Override
-	public IBinder onBind(Intent intent) {
-		return mAgentBinder;
-	}
+	// there is only one of these in flight at any time
+	private AgentRequest mAgentRequest;
 
 	public void setActivityHandler(Handler handler) {
 		mActivityHandler = handler;
 	}
-
+	public void setApplicationContext(Context appContext) {
+		mAppContext = appContext;
+	}
 
 	public void execute(final AgentRequest agentRequest) {
-		register(agentRequest);
-
-		final SSHAgentConnection agentConnector = new SSHAgentConnection(getApplicationContext(), agentRequest.getTargetPackage());
+		mAgentRequest = agentRequest;
+		final SSHAgentConnection agentConnector = new SSHAgentConnection(mAppContext, agentRequest.getTargetPackage());
 
 		agentConnector.connect(new SSHAgentConnection.OnBound() {
 			@Override
 			public void onBound(ISSHAgentService sshAgent) {
-				executeInternal(agentConnector, agentRequest.getRequestId());
+				executeInternal(agentConnector);
 				agentConnector.disconnect();
 			}
 
@@ -81,30 +68,17 @@ public class AgentManager extends Service {
 		});
 	}
 
-	private void register(AgentRequest agentRequest) {
-		int requestId = agentRequest.getRequestId();
-		if (requestId == AgentRequest.REQUEST_ID_NONE) {
-			// new AgentRequest, assign id
-			// TODO: something else as key maybe?
-			requestId = agentRequest.hashCode();
-			agentRequest.setRequestId(requestId);
-		}
-		mAgentRequests.put(requestId, agentRequest);
-	}
-
-	public void executeInternal(SSHAgentConnection agentConnector, int requestId) {
+	public void executeInternal(SSHAgentConnection agentConnector) {
 		Log.d(getClass().toString(), "====>>>> executing request in tid: "+ android.os.Process.myTid());
 		try {
-			AgentRequest agentRequest = mAgentRequests.get(requestId);
 
-			Intent response = agentConnector.execute(agentRequest.getRequest());
+			Intent response = agentConnector.execute(mAgentRequest.getRequest());
             int statusCode = response.getIntExtra(SSHAgentApi.EXTRA_STATUS_CODE, SSHAgentApi.STATUS_CODE_FAILURE);
 
             switch (statusCode) {
 			case SSHAgentApi.STATUS_CODE_SUCCESS:
 			case SSHAgentApi.STATUS_CODE_FAILURE:
-				agentRequest.getAgentResultCallback().onAgentResult(response);
-				mAgentRequests.remove(requestId);
+				mAgentRequest.getAgentResultCallback().onAgentResult(response);
                 return;
             case SSHAgentApi.STATUS_CODE_USER_INTERACTION_REQUIRED:
             	// send back via handler to activity to execute
@@ -136,23 +110,20 @@ public class AgentManager extends Service {
 			Log.d(getClass().toString(), "====>>>> pendingIntentResultHandler tid: "+ android.os.Process.myTid());
 			Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT_RESULT);
 
-			int requestId = 0;
 			if (result != null) {
-				requestId = result.getIntExtra(AgentRequest.REQUEST_ID, AgentRequest.REQUEST_ID_NONE);
-			}
-			AgentRequest agentRequest = mAgentRequests.get(requestId);
-
-			if (result != null) {
-				agentRequest.setRequest(result);
-
 				// execute received Intent again for result
-				execute(agentRequest);
+				mAgentRequest.setRequest(result);
+				execute(mAgentRequest);
 			} else {
-				agentRequest.getAgentResultCallback().onAgentResult(null);
-				mAgentRequests.remove(requestId);
+				mAgentRequest.getAgentResultCallback().onAgentResult(null);
 			}
 		}
 	};
 
+	@Override
+	protected Void doInBackground(AgentRequest... params) {
+		execute(params[0]);
+		return null;
+	}
 }
 
