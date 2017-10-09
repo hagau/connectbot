@@ -40,6 +40,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -518,17 +519,43 @@ public class HostEditorFragment extends Fragment {
 		final String agentName = selectAgent();
 		Log.d(getClass().toString(), "====>>>> selectKey tid: "+ android.os.Process.myTid());
 
-		Thread thread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				AgentKeySelectionManager keySelectionManager = new AgentKeySelectionManager();
-				keySelectionManager.selectKeyFromAgent(agentName, updateAgentHandler);
-			}
-		});
-		thread.start();
+//		Thread thread = new Thread(new Runnable() {
+//			@Override
+//			public void run() {
+//				AgentKeySelectionManager keySelectionManager = new AgentKeySelectionManager(getActivity().getApplicationContext(), agentName, updateAgentHandler);
+//				keySelectionManager.selectKeyFromAgent();
+//			}
+//		});
+//		thread.start();
+
+
+//		class AgentUpdateParam {
+//			public Context context;
+//			public String agentName;
+//			public UpdateAgentHandler updateAgentHandler;
+//
+//			AgentUpdateParam(Context context, String agentName, UpdateAgentHandler updateAgentHandler) {
+//				this.context = context;
+//				this.agentName = agentName;
+//				this.updateAgentHandler = updateAgentHandler;
+//			}
+//		}
+//		new AsyncTask<AgentUpdateParam, Void, Void>() {
+//			@Override
+//			protected Void doInBackground(AgentUpdateParam... params) {
+//				AgentKeySelectionManager keySelectionManager = new AgentKeySelectionManager(params[0].context, params[0].agentName, params[0].updateAgentHandler);
+//				keySelectionManager.selectKeyFromAgent();
+//
+//				return null;
+//			}
+//		}.execute(new AgentUpdateParam(getActivity().getApplicationContext(), agentName, updateAgentHandler));
+
+		AgentKeySelectionManager keySelectionManager = new AgentKeySelectionManager(getActivity().getApplicationContext(), agentName, updateAgentHandler);
+		keySelectionManager.selectKeyFromAgent();
+
 	}
 
-	private Handler updateAgentHandler = new UpdateAgentHandler(new WeakReference<>(this));
+	private UpdateAgentHandler updateAgentHandler = new UpdateAgentHandler(new WeakReference<>(this));
 
 	private String selectAgent() {
 		// TODO: implement GUI for selecting agent, pick last entry for now

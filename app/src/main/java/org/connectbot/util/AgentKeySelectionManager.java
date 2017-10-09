@@ -25,29 +25,58 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 
 import org.connectbot.bean.AgentBean;
+import org.connectbot.service.AgentManager;
 import org.openintents.ssh.KeySelectionRequest;
 import org.openintents.ssh.KeySelectionResponse;
 import org.openintents.ssh.SSHAgentApi;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 
 
-public class AgentKeySelectionManager {
+public class AgentKeySelectionManager implements AgentRequest.OnAgentResultCallback {
 	public static final String AGENT_BEAN = "agent_bean";
+
+	protected AgentManager agentManager = null;
+	private ServiceConnection agentConnection = new ServiceConnection() {
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			agentManager = ((AgentManager.AgentBinder) service).getService();
+			getKey(agentName);
+		}
+
+		public void onServiceDisconnected(ComponentName className) {
+			agentManager = null;
+		}
+	};
+
+	private Context appContext;
+	private String agentName;
+	private Handler updateHandler;
+
+	public AgentKeySelectionManager(Context appContext, String agentName, Handler updateHandler) {
+		this.appContext = appContext;
+		this.agentName = agentName;
+		this.updateHandler = updateHandler;
+	}
 
     /**
 	 * Select a key from an external ssh-agent
 	 */
-	public void selectKeyFromAgent(String agentName, Handler updateHandler) {
-
+	public void selectKeyFromAgent() {
 		Log.d(getClass().toString(), "====>>>> selectKeyFromAgent tid: "+ android.os.Process.myTid());
 
-		KeySelectionResponse response = getKey(agentName);
+		appContext.bindService(new Intent(appContext, AgentManager.class), agentConnection, Context.BIND_AUTO_CREATE);
 
+	}
+
+	public void updateFragment(KeySelectionResponse response) {
 		assert response != null; // response is never null anyway, so silence the warning
 		int resultCode = response.getResultCode();
 
@@ -115,16 +144,19 @@ public class AgentKeySelectionManager {
 		}
 	}
 
-	private KeySelectionResponse getKey(String targetPackage) {
+	private void getKey(String targetPackage) {
 
 		Intent request = new KeySelectionRequest().toIntent();
 
 		AgentRequest agentRequest = new AgentRequest(request, targetPackage);
+		agentRequest.setAgentResultCallback(this);
 
-		AgentExecutor agentExecutor = new AgentExecutor();
-		Intent result = agentExecutor.execute(agentRequest);
+		agentManager.execute(agentRequest);
 
-		return new KeySelectionResponse(result);
     }
+
+    public void onAgentResult(Intent data) {
+		updateFragment(new KeySelectionResponse(data));
+	}
 }
 

@@ -17,66 +17,53 @@
 
 package org.connectbot.service;
 
+import org.connectbot.bean.AgentBean;
 import org.connectbot.util.AgentRequest;
 import org.openintents.ssh.ISSHAgentService;
 import org.openintents.ssh.SSHAgentApi;
 import org.openintents.ssh.SSHAgentConnection;
 
-import android.annotation.SuppressLint;
 import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
-public class AgentManager {
-	// This singleton class is alive as long as the ApplicatinContext is alive,
-	// and mAppContext is the ApplicatinContext, therefore no leak
-	@SuppressLint("StaticFieldLeak")
-	private static AgentManager sInstance;
-
-	private Context mAppContext;
+public class AgentManager extends Service {
 
 	private Handler mActivityHandler;
 
 	// there is only one of these in flight at any time
 	private AgentRequest mAgentRequest;
 
-	private AgentManager() {
+	public class AgentBinder extends Binder {
+		public AgentManager getService() {
+			return AgentManager.this;
+		}
+	}
+	private final IBinder mAgentBinder = new AgentBinder();
+
+	@Nullable
+	@Override
+	public IBinder onBind(Intent intent) {
+		return mAgentBinder;
 	}
 
-	public static AgentManager get() {
-        if (sInstance == null) {
-			sInstance = new AgentManager();
-        }
-        return sInstance;
-    }
-
-    public AgentManager setAppContext(Context context) {
-		mAppContext = context;
-		return sInstance;
-	}
-
-	public AgentManager setActivityHandler(Handler handler) {
+	public void setActivityHandler(Handler handler) {
 		mActivityHandler = handler;
-		return sInstance;
 	}
 
-	public void registerWithAgentManager(Context appContext, Handler agentHandler) {
-		setAppContext(appContext);
-		setActivityHandler(agentHandler);
-	}
-	public void unRegisterWithAgentManager() {
-		setAppContext(null);
-		setActivityHandler(null);
-	}
 
 	public void execute(final AgentRequest agentRequest) {
 		mAgentRequest = agentRequest;
-		final SSHAgentConnection agentConnector = new SSHAgentConnection(mAppContext, agentRequest.getTargetPackage());
+		final SSHAgentConnection agentConnector = new SSHAgentConnection(getApplicationContext(), agentRequest.getTargetPackage());
 
 		agentConnector.connect(new SSHAgentConnection.OnBound() {
 			@Override

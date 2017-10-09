@@ -69,6 +69,18 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 	private boolean mIsCreating;
 	private MenuItem mSaveHostButton;
 
+	protected AgentManager agentManager = null;
+	private ServiceConnection agentConnection = new ServiceConnection() {
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			agentManager = ((AgentManager.AgentBinder) service).getService();
+			agentManager.setActivityHandler(agentHandler);
+		}
+
+		public void onServiceDisconnected(ComponentName className) {
+			agentManager = null;
+		}
+	};
+
 	public static Intent createIntentForExistingHost(Context context, long existingHostId) {
 		Intent i = new Intent(context, EditHostActivity.class);
 		i.putExtra(EXTRA_EXISTING_HOST_ID, existingHostId);
@@ -138,7 +150,7 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 		defaultPubkeyNames.recycle();
 		defaultPubkeyValues.recycle();
 
-		AgentManager.get().registerWithAgentManager(getApplicationContext(), agentHandler);
+		bindService(new Intent(this, AgentManager.class), agentConnection, Context.BIND_AUTO_CREATE);
 	}
 
 	@Override
@@ -210,7 +222,7 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 	public void onDestroy() {
 		super.onDestroy();
 
-		AgentManager.get().unRegisterWithAgentManager();
+		unbindService(agentConnection);
 	}
 
 	@Override
@@ -357,7 +369,7 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
         super.onActivityResult(requestCode, resultCode, data);
 		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
 
-		Handler handler = AgentManager.get().getPendingIntentResultHandler();
+		Handler handler = agentManager.getPendingIntentResultHandler();
 
 		Bundle bundle = new Bundle();
 		bundle.putParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT_RESULT, data);

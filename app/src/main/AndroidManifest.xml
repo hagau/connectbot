@@ -156,6 +156,11 @@
 			android:configChanges="keyboardHidden|orientation"
 			android:description="@string/service_desc"/>
 
+		<service
+			android:name="org.connectbot.service.AgentManager"
+			android:configChanges="keyboardHidden|orientation"
+			android:description="@string/agent_service_desc"/>
+
 		<activity
 			android:name=".ConsoleActivity"
 			android:configChanges="keyboardHidden|orientation"

@@ -25,6 +25,7 @@
 
 	<!-- Summary of what the ConnectBot service does; displayed in the Android running apps list -->
 	<string name="service_desc">"Maintains SSH connections and loaded pubkeys"</string>
+	<string name="agent_service_desc">"Manages communication with key agents"</string>
 
 	<!-- Window title for the Host List -->
 	<string name="title_hosts_list">"Hosts"</string>

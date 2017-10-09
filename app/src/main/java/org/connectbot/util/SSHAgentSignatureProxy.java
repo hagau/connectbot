@@ -17,49 +17,90 @@
 
 package org.connectbot.util;
 
-import android.content.Intent;
-import android.util.Log;
-
-import com.trilead.ssh2.auth.SignatureProxy;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.concurrent.CountDownLatch;
 
 import org.connectbot.bean.AgentBean;
+import org.connectbot.service.AgentManager;
 import org.openintents.ssh.SSHAgentApi;
 import org.openintents.ssh.SigningRequest;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
+import com.trilead.ssh2.auth.SignatureProxy;
+
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.IBinder;
+import android.util.Log;
 
 
-public class SSHAgentSignatureProxy extends SignatureProxy {
+public class SSHAgentSignatureProxy extends SignatureProxy implements AgentRequest.OnAgentResultCallback {
 
-    private AgentBean agentBean;
+	private Context mAppContext;
+
+    private AgentBean mAgentBean;
+
+	private CountDownLatch mExecutionLatch;
+
+	private Intent mResult;
+	private AgentRequest mAgentRequest;
+
+	protected AgentManager agentManager = null;
+	private ServiceConnection agentConnection = new ServiceConnection() {
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			agentManager = ((AgentManager.AgentBinder) service).getService();
+			agentManager.execute(mAgentRequest);
+		}
+
+		public void onServiceDisconnected(ComponentName className) {
+			agentManager = null;
+		}
+	};
 
     /**
      * Instantiates a new SignatureProxy which needs a public key for the
      * later authentication process.
      */
-    private SSHAgentSignatureProxy(AgentBean agentBean, PublicKey publicKey) throws InvalidKeySpecException, NoSuchAlgorithmException {
-        super(publicKey);
-        this.agentBean = agentBean;
+    public SSHAgentSignatureProxy(Context mAppContext, AgentBean mAgentBean) throws InvalidKeySpecException, NoSuchAlgorithmException {
+        super(PubkeyUtils.decodePublic(mAgentBean.getPublicKey(), mAgentBean.getKeyType()));
+		this.mAppContext = mAppContext;
+        this.mAgentBean = mAgentBean;
     }
 
     @Override
     public byte[] sign(final byte[] challenge, final String hashAlgorithm) throws IOException {
 		Log.d(getClass().toString(), "====>>>> executing sign in tid: "+ android.os.Process.myTid());
 
-        Intent request = new SigningRequest(challenge, agentBean.getKeyIdentifier(), translateHashAlgorithm(hashAlgorithm)).toIntent();
+        Intent request = new SigningRequest(challenge, mAgentBean.getKeyIdentifier(), translateHashAlgorithm(hashAlgorithm)).toIntent();
 
-		AgentRequest agentRequest = new AgentRequest(request, agentBean.getPackageName());
+		mAgentRequest = new AgentRequest(request, mAgentBean.getPackageName());
+		mAgentRequest.setAgentResultCallback(this);
 
-		AgentExecutor agentExecutor = new AgentExecutor();
-		Intent result = agentExecutor.execute(agentRequest);
-		if (result == null) {
+		mExecutionLatch = new CountDownLatch(1);
+		mAppContext.bindService(new Intent(mAppContext, AgentManager.class), agentConnection, Context.BIND_AUTO_CREATE);
+
+		// this is always run from a connection thread,
+		// never the main thread, so locking is acceptable
+		mExecutionLatch = new CountDownLatch(1);
+		try { // wait for result
+			mExecutionLatch.await();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		if (mResult == null) {
 			return null;
 		}
 
-		byte[] signature = result.getByteArrayExtra(SSHAgentApi.EXTRA_SIGNATURE);
+		byte[] signature = mResult.getByteArrayExtra(SSHAgentApi.EXTRA_SIGNATURE);
+
+		// TODO: error handling
+		if (signature == null) {
+			throw new IOException("No signature in agent response");
+		}
 
 		return signature;
     }
@@ -75,17 +116,10 @@ public class SSHAgentSignatureProxy extends SignatureProxy {
 		}
 	}
 
-	public static class Builder {
-        private AgentBean agentBean;
+	public void onAgentResult(Intent data) {
+		mResult = data;
+		mExecutionLatch.countDown();
+	}
 
-        public Builder(AgentBean agentBean) {
-            this.agentBean = agentBean;
-        }
-
-        public SSHAgentSignatureProxy build() throws InvalidKeySpecException, NoSuchAlgorithmException {
-            PublicKey publicKey = PubkeyUtils.decodePublic(agentBean.getPublicKey(), agentBean.getKeyType());
-            return new SSHAgentSignatureProxy(agentBean, publicKey);
-        }
-    }
 }
 

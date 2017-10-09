@@ -202,6 +202,18 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 		}
 	};
 
+	protected AgentManager agentManager = null;
+	private ServiceConnection agentConnection = new ServiceConnection() {
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			agentManager = ((AgentManager.AgentBinder) service).getService();
+			agentManager.setActivityHandler(agentHandler);
+		}
+
+		public void onServiceDisconnected(ComponentName className) {
+			agentManager = null;
+		}
+	};
+
 	protected Handler promptHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
@@ -739,7 +751,7 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 				}
 			});
 
-		AgentManager.get().registerWithAgentManager(getApplicationContext(), agentHandler);
+		bindService(new Intent(this, AgentManager.class), agentConnection, Context.BIND_AUTO_CREATE);
 	}
 
 
@@ -1109,7 +1121,7 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		AgentManager.get().unRegisterWithAgentManager();
+		unbindService(agentConnection);
 	}
 
 	@Override
@@ -1391,7 +1403,7 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 
 //		AgentManager.get().processPendingIntentResult(data);
 
-		Handler handler = AgentManager.get().getPendingIntentResultHandler();
+		Handler handler = agentManager.getPendingIntentResultHandler();
 
 		Bundle bundle = new Bundle();
 		bundle.putParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT_RESULT, data);
