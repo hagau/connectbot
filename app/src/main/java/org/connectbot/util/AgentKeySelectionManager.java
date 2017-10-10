@@ -17,7 +17,6 @@
 
 package org.connectbot.util;
 
-import java.io.IOException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -26,9 +25,9 @@ import java.security.spec.X509EncodedKeySpec;
 
 import org.connectbot.bean.AgentBean;
 import org.connectbot.service.AgentManager;
-import org.openintents.ssh.KeySelectionRequest;
-import org.openintents.ssh.KeySelectionResponse;
+import org.openintents.ssh.GetPublicKeyResponse;
 import org.openintents.ssh.SSHAgentApi;
+import org.openintents.ssh.utils.GetPublicKeyRequest;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -76,13 +75,13 @@ public class AgentKeySelectionManager implements AgentRequest.OnAgentResultCallb
 
 	}
 
-	public void updateFragment(KeySelectionResponse response) {
+	public void updateFragment(GetPublicKeyResponse response) {
 		assert response != null; // response is never null anyway, so silence the warning
 		int resultCode = response.getResultCode();
 
 		Message message = updateHandler.obtainMessage(resultCode);
 
-		if (resultCode == KeySelectionResponse.RESULT_CODE_SUCCESS) {
+		if (resultCode == GetPublicKeyResponse.RESULT_CODE_SUCCESS) {
 			Bundle bundle = new Bundle();
 
 			byte[] encodedPublicKey = response.getEncodedPublicKey();
@@ -91,7 +90,7 @@ public class AgentKeySelectionManager implements AgentRequest.OnAgentResultCallb
 
 			PublicKey publicKey = getPublicKey(encodedPublicKey, algorithm, format);
 			if (publicKey == null) {
-				message.what = KeySelectionResponse.RESULT_CODE_ERROR;
+				message.what = GetPublicKeyResponse.RESULT_CODE_ERROR;
 				message.sendToTarget();
 				return;
 			}
@@ -146,7 +145,7 @@ public class AgentKeySelectionManager implements AgentRequest.OnAgentResultCallb
 
 	private void getKey(String targetPackage) {
 
-		Intent request = new KeySelectionRequest().toIntent();
+		Intent request = new GetPublicKeyRequest().toIntent();
 
 		AgentRequest agentRequest = new AgentRequest(request, targetPackage);
 		agentRequest.setAgentResultCallback(this);
@@ -156,7 +155,7 @@ public class AgentKeySelectionManager implements AgentRequest.OnAgentResultCallb
     }
 
     public void onAgentResult(Intent data) {
-		updateFragment(new KeySelectionResponse(data));
+		updateFragment(new GetPublicKeyResponse(data));
 	}
 }
 
