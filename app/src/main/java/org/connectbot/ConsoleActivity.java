@@ -206,7 +206,8 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 	private ServiceConnection agentConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			agentManager = ((AgentManager.AgentBinder) service).getService();
-			agentManager.setActivityHandler(agentHandler);
+//			agentManager.setActivityHandler(agentHandler);
+			agentManager.setActivity(ConsoleActivity.this);
 		}
 
 		public void onServiceDisconnected(ComponentName className) {
@@ -1401,17 +1402,17 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
         super.onActivityResult(requestCode, resultCode, data);
 		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
 
-//		AgentManager.get().processPendingIntentResult(data);
+		agentManager.processPendingIntentResult(data);
 
-		Handler handler = agentManager.getPendingIntentResultHandler();
-
-		Bundle bundle = new Bundle();
-		bundle.putParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT_RESULT, data);
-
-		Message message = handler.obtainMessage();
-		message.setData(bundle);
-
-		handler.sendMessage(message);
+//		Handler handler = agentManager.getPendingIntentResultHandler();
+//
+//		Bundle bundle = new Bundle();
+//		bundle.putParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT_RESULT, data);
+//
+//		Message message = handler.obtainMessage();
+//		message.setData(bundle);
+//
+//		handler.sendMessage(message);
     }
 
 	private Handler agentHandler = new AgentHandler(new WeakReference<>((Activity) this));
