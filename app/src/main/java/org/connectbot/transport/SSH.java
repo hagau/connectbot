@@ -55,7 +55,7 @@ import org.connectbot.util.Ed25519Provider;
 import org.connectbot.util.HostDatabase;
 import org.connectbot.util.PubkeyDatabase;
 import org.connectbot.util.PubkeyUtils;
-import org.connectbot.util.SSHAgentSignatureProxy;
+import org.connectbot.util.SshAgentSignatureProxy;
 
 import com.trilead.ssh2.AuthAgentCallback;
 import com.trilead.ssh2.ChannelCondition;
@@ -416,7 +416,7 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 		try {
 			Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
 
-			SSHAgentSignatureProxy sshAgentSignatureManager = new SSHAgentSignatureProxy(manager.getApplicationContext(), agentBean);
+			SshAgentSignatureProxy sshAgentSignatureManager = new SshAgentSignatureProxy(manager.getApplicationContext(), agentBean);
            	return connection.authenticateWithPublicKey(username, sshAgentSignatureManager);
 		} catch (InvalidKeySpecException | NoSuchAlgorithmException | IOException e) {
 			e.printStackTrace();

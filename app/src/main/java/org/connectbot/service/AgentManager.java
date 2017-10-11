@@ -22,8 +22,8 @@ import java.util.HashMap;
 
 import org.connectbot.util.AgentRequest;
 import org.openintents.ssh.ISSHAgentService;
-import org.openintents.ssh.SSHAgentApi;
-import org.openintents.ssh.SSHAgentConnection;
+import org.openintents.ssh.SshAgentConnection;
+import org.openintents.ssh.SshAgentApi;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -65,9 +65,9 @@ public class AgentManager extends Service {
 	public void execute(final AgentRequest agentRequest) {
 		register(agentRequest);
 
-		final SSHAgentConnection agentConnector = new SSHAgentConnection(getApplicationContext(), agentRequest.getTargetPackage());
+		final SshAgentConnection agentConnector = new SshAgentConnection(getApplicationContext(), agentRequest.getTargetPackage());
 
-		agentConnector.connect(new SSHAgentConnection.OnBound() {
+		agentConnector.connect(new SshAgentConnection.OnBound() {
 			@Override
 			public void onBound(ISSHAgentService sshAgent) {
 				executeInternal(agentConnector, agentRequest.getRequestId());
@@ -91,22 +91,22 @@ public class AgentManager extends Service {
 		mAgentRequests.put(requestId, agentRequest);
 	}
 
-	public void executeInternal(SSHAgentConnection agentConnector, int requestId) {
+	public void executeInternal(SshAgentConnection agentConnector, int requestId) {
 		Log.d(getClass().toString(), "====>>>> executing request in tid: "+ android.os.Process.myTid());
 		try {
 			AgentRequest agentRequest = mAgentRequests.get(requestId);
 
 			Intent response = agentConnector.execute(agentRequest.getRequest());
-            int statusCode = response.getIntExtra(SSHAgentApi.EXTRA_STATUS_CODE, SSHAgentApi.STATUS_CODE_FAILURE);
+            int statusCode = response.getIntExtra(SshAgentApi.EXTRA_RESULT_CODE, SshAgentApi.RESULT_CODE_FAILURE);
 
             switch (statusCode) {
-			case SSHAgentApi.STATUS_CODE_SUCCESS:
-			case SSHAgentApi.STATUS_CODE_FAILURE:
+			case SshAgentApi.RESULT_CODE_SUCCESS:
+			case SshAgentApi.RESULT_CODE_FAILURE:
 				agentRequest.getAgentResultCallback().onAgentResult(response);
 				mAgentRequests.remove(requestId);
                 return;
-            case SSHAgentApi.STATUS_CODE_USER_INTERACTION_REQUIRED:
-                PendingIntent pendingIntent = response.getParcelableExtra(SSHAgentApi.EXTRA_PENDING_INTENT);
+            case SshAgentApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
+                PendingIntent pendingIntent = response.getParcelableExtra(SshAgentApi.EXTRA_PENDING_INTENT);
 
 				try {
 					Log.d(getClass().toString(), "====>>>> tid: " + android.os.Process.myTid());
@@ -135,6 +135,7 @@ public class AgentManager extends Service {
 			// execute received Intent again for result
 			execute(agentRequest);
 		} else {
+			Log.d(getClass().toString(), "====>>>> agentRequest: "+ agentRequest);
 			agentRequest.getAgentResultCallback().onAgentResult(null);
 			mAgentRequests.remove(requestId);
 		}

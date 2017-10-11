@@ -26,7 +26,7 @@ import java.security.spec.X509EncodedKeySpec;
 import org.connectbot.bean.AgentBean;
 import org.connectbot.service.AgentManager;
 import org.openintents.ssh.GetPublicKeyResponse;
-import org.openintents.ssh.SSHAgentApi;
+import org.openintents.ssh.SshAgentApi;
 import org.openintents.ssh.utils.GetPublicKeyRequest;
 
 import android.content.ComponentName;
@@ -119,7 +119,7 @@ public class AgentKeySelectionManager implements AgentRequest.OnAgentResultCallb
 
 	private PublicKey getPublicKey(byte[] encodedPublicKey, int algorithmFlag, int format) {
         PublicKey publicKey = null;
-		if (format == SSHAgentApi.X509) {
+		if (format == SshAgentApi.X509) {
 			try {
 				publicKey = PubkeyUtils.decodePublic(encodedPublicKey, translateAlgorithm(algorithmFlag));
 			} catch (NoSuchAlgorithmException e) {
@@ -135,13 +135,13 @@ public class AgentKeySelectionManager implements AgentRequest.OnAgentResultCallb
 
 	private String translateAlgorithm(int algorithm) throws NoSuchAlgorithmException {
 		switch (algorithm) {
-		case SSHAgentApi.RSA:
+		case SshAgentApi.RSA:
 			return "RSA";
-		case SSHAgentApi.DSA:
+		case SshAgentApi.DSA:
 			return "DSA";
-		case SSHAgentApi.ECDSA:
+		case SshAgentApi.ECDSA:
 			return "EC";
-		case SSHAgentApi.EDDSA:
+		case SshAgentApi.EDDSA:
 			return "Ed25519";
 		default:
 			throw new NoSuchAlgorithmException("Algorithm not supported: "+ algorithm);

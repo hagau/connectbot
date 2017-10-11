@@ -24,8 +24,10 @@ import java.util.concurrent.CountDownLatch;
 
 import org.connectbot.bean.AgentBean;
 import org.connectbot.service.AgentManager;
-import org.openintents.ssh.SSHAgentApi;
+import org.openintents.ssh.SshAgentApi;
 import org.openintents.ssh.SigningRequest;
+import org.openintents.ssh.SshAgentApi;
+import org.openintents.ssh.SshAgentApiError;
 
 import com.trilead.ssh2.auth.SignatureProxy;
 
@@ -37,7 +39,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 
-public class SSHAgentSignatureProxy extends SignatureProxy implements AgentRequest.OnAgentResultCallback {
+public class SshAgentSignatureProxy extends SignatureProxy implements AgentRequest.OnAgentResultCallback {
 
 	private Context mAppContext;
 
@@ -64,7 +66,7 @@ public class SSHAgentSignatureProxy extends SignatureProxy implements AgentReque
      * Instantiates a new SignatureProxy which needs a public key for the
      * later authentication process.
      */
-    public SSHAgentSignatureProxy(Context mAppContext, AgentBean mAgentBean) throws InvalidKeySpecException, NoSuchAlgorithmException {
+    public SshAgentSignatureProxy(Context mAppContext, AgentBean mAgentBean) throws InvalidKeySpecException, NoSuchAlgorithmException {
         super(PubkeyUtils.decodePublic(mAgentBean.getPublicKey(), mAgentBean.getKeyType()));
 		this.mAppContext = mAppContext;
         this.mAgentBean = mAgentBean;
@@ -95,7 +97,7 @@ public class SSHAgentSignatureProxy extends SignatureProxy implements AgentReque
 			return null;
 		}
 
-		byte[] signature = mResult.getByteArrayExtra(SSHAgentApi.EXTRA_SIGNATURE);
+		byte[] signature = mResult.getByteArrayExtra(SshAgentApi.EXTRA_SIGNATURE);
 
 		// TODO: error handling
 		if (signature == null) {
@@ -108,15 +110,15 @@ public class SSHAgentSignatureProxy extends SignatureProxy implements AgentReque
 	private int translateHashAlgorithm(String hashAlgorithm) {
 		switch (hashAlgorithm) {
 		case SignatureProxy.SHA1:
-			return SSHAgentApi.SHA1;
+			return SshAgentApi.SHA1;
 		case SignatureProxy.SHA256:
-			return SSHAgentApi.SHA256;
+			return SshAgentApi.SHA256;
 		case SignatureProxy.SHA384:
-			return SSHAgentApi.SHA384;
+			return SshAgentApi.SHA384;
 		case SignatureProxy.SHA512:
-			return SSHAgentApi.SHA512;
+			return SshAgentApi.SHA512;
 		default:
-			return SSHAgentApi.INVALID_HASH_ALGORITHM;
+			return SshAgentApiError.INVALID_HASH_ALGORITHM;
 		}
 	}
 

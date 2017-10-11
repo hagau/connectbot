@@ -33,7 +33,7 @@ import org.connectbot.util.AgentKeySelectionManager;
 import org.connectbot.util.HostDatabase;
 import org.connectbot.views.CheckableMenuItem;
 import org.openintents.ssh.GetPublicKeyResponse;
-import org.openintents.ssh.SSHAgentApi;
+import org.openintents.ssh.SshAgentApi;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -564,14 +564,14 @@ public class HostEditorFragment extends Fragment {
 
 	private String selectAgent() {
 		// TODO: implement GUI for selecting agent, pick last entry for now
-		List<String> providers = SSHAgentApi.getAgentProviders(getContext());
+		List<String> providers = SshAgentApi.getAgentProviders(getContext());
 		if (providers.isEmpty()) {
 			Toast.makeText(getContext(), R.string.No_SSH_Agents_installed, Toast.LENGTH_SHORT).show();
 		}
 		String selectedAgent = null;
 		for (String provider : providers) {
 			Log.d(getClass().toString(), "packageName "+ provider);
-			Log.d(getClass().toString(), "className "+ SSHAgentApi.SERVICE_INTENT);
+			Log.d(getClass().toString(), "className "+ SshAgentApi.SERVICE_INTENT);
 			selectedAgent = provider;
 		}
 		return selectedAgent;

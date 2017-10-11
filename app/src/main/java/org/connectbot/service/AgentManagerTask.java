@@ -19,21 +19,16 @@ package org.connectbot.service;
 
 import org.connectbot.util.AgentRequest;
 import org.openintents.ssh.ISSHAgentService;
-import org.openintents.ssh.SSHAgentApi;
-import org.openintents.ssh.SSHAgentConnection;
+import org.openintents.ssh.SshAgentConnection;
+import org.openintents.ssh.SshAgentApi;
 
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Message;
-import android.os.RemoteException;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
@@ -41,25 +36,25 @@ public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 	private Handler mActivityHandler;
 	private Context mAppContext;
 
-	// there is only one of these in flight at any time
 	private AgentRequest mAgentRequest;
 
-	public void setActivityHandler(Handler handler) {
-		mActivityHandler = handler;
-	}
-	public void setApplicationContext(Context appContext) {
+	private ISSHAgentService mService;
+
+	public AgentManagerTask(Handler activityHandler, Context appContext) {
+		mActivityHandler = activityHandler;
 		mAppContext = appContext;
 	}
 
 	public void execute(final AgentRequest agentRequest) {
 		mAgentRequest = agentRequest;
-		final SSHAgentConnection agentConnector = new SSHAgentConnection(mAppContext, agentRequest.getTargetPackage());
+		final SshAgentConnection agentConnection = new SshAgentConnection(mAppContext, agentRequest.getTargetPackage());
 
-		agentConnector.connect(new SSHAgentConnection.OnBound() {
+		agentConnection.connect(new SshAgentConnection.OnBound() {
 			@Override
 			public void onBound(ISSHAgentService sshAgent) {
-				executeInternal(agentConnector);
-				agentConnector.disconnect();
+				mService = sshAgent;
+				executeInternal(sshAgent);
+				agentConnection.disconnect();
 			}
 
 			@Override
@@ -68,57 +63,32 @@ public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 		});
 	}
 
-	public void executeInternal(SSHAgentConnection agentConnector) {
+	public void executeInternal(ISSHAgentService sshAgent) {
 		Log.d(getClass().toString(), "====>>>> executing request in tid: "+ android.os.Process.myTid());
-		try {
 
-			Intent response = agentConnector.execute(mAgentRequest.getRequest());
-            int statusCode = response.getIntExtra(SSHAgentApi.EXTRA_STATUS_CODE, SSHAgentApi.STATUS_CODE_FAILURE);
+		SshAgentApi agentApi = new SshAgentApi(sshAgent);
 
-            switch (statusCode) {
-			case SSHAgentApi.STATUS_CODE_SUCCESS:
-			case SSHAgentApi.STATUS_CODE_FAILURE:
-				mAgentRequest.getAgentResultCallback().onAgentResult(response);
-                return;
-            case SSHAgentApi.STATUS_CODE_USER_INTERACTION_REQUIRED:
-            	// send back via handler to activity to execute
-                PendingIntent pendingIntent = response.getParcelableExtra(SSHAgentApi.EXTRA_PENDING_INTENT);
+		Intent response = agentApi.executeApi(mAgentRequest.getRequest());
+		int statusCode = response.getIntExtra(SshAgentApi.EXTRA_RESULT_CODE, SshAgentApi.RESULT_CODE_FAILURE);
 
-				Bundle bundle = new Bundle();
-				bundle.putParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT, pendingIntent);
+		switch (statusCode) {
+		case SshAgentApi.RESULT_CODE_SUCCESS:
+		case SshAgentApi.RESULT_CODE_FAILURE:
+			mAgentRequest.getAgentResultCallback().onAgentResult(response);
+			return;
+		case SshAgentApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
+			// send back via handler to activity to execute
+			PendingIntent pendingIntent = response.getParcelableExtra(SshAgentApi.EXTRA_PENDING_INTENT);
 
-				Message message = mActivityHandler.obtainMessage();
-				message.setData(bundle);
+			Bundle bundle = new Bundle();
+			bundle.putParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT, pendingIntent);
 
-				mActivityHandler.sendMessage(message);
-            }
-        } catch (RemoteException e) {
-            Log.d(getClass().toString(), "Error while signing key from agent:");
-            Log.d(getClass().toString(), e.getMessage());
-            e.printStackTrace();
-        }
-	}
+			Message message = mActivityHandler.obtainMessage();
+			message.setData(bundle);
 
-
-	public Handler getPendingIntentResultHandler() {
-		return pendingIntentResultHandler;
-	}
-
-	private Handler pendingIntentResultHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			Log.d(getClass().toString(), "====>>>> pendingIntentResultHandler tid: "+ android.os.Process.myTid());
-			Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT_RESULT);
-
-			if (result != null) {
-				// execute received Intent again for result
-				mAgentRequest.setRequest(result);
-				execute(mAgentRequest);
-			} else {
-				mAgentRequest.getAgentResultCallback().onAgentResult(null);
-			}
+			mActivityHandler.sendMessage(message);
 		}
-	};
+	}
 
 	@Override
 	protected Void doInBackground(AgentRequest... params) {
