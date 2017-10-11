@@ -109,6 +109,10 @@ public class SSHAgentSignatureProxy extends SignatureProxy implements AgentReque
 		switch (hashAlgorithm) {
 		case SignatureProxy.SHA1:
 			return SSHAgentApi.SHA1;
+		case SignatureProxy.SHA256:
+			return SSHAgentApi.SHA256;
+		case SignatureProxy.SHA384:
+			return SSHAgentApi.SHA384;
 		case SignatureProxy.SHA512:
 			return SSHAgentApi.SHA512;
 		default:

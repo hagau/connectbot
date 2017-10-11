@@ -88,6 +88,7 @@ public class AgentKeySelectionManager implements AgentRequest.OnAgentResultCallb
 			int algorithm = response.getKeyAlgorithm();
 			int format = response.getKeyFormat();
 
+			// try decoding the encoded key to make sure it can be used for authentication later
 			PublicKey publicKey = getPublicKey(encodedPublicKey, algorithm, format);
 			if (publicKey == null) {
 				message.what = GetPublicKeyResponse.RESULT_CODE_ERROR;
@@ -97,7 +98,14 @@ public class AgentKeySelectionManager implements AgentRequest.OnAgentResultCallb
 
 			AgentBean agentBean = new AgentBean();
 			agentBean.setKeyIdentifier(response.getKeyID());
-			agentBean.setKeyType(publicKey.getAlgorithm());
+			try {
+				agentBean.setKeyType(translateAlgorithm(algorithm));
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+				message.what = GetPublicKeyResponse.RESULT_CODE_ERROR;
+				message.sendToTarget();
+				return;
+			}
 			agentBean.setPackageName(agentName);
 			agentBean.setDescription(response.getKeyDescription());
 			agentBean.setPublicKey(publicKey.getEncoded());
@@ -112,11 +120,8 @@ public class AgentKeySelectionManager implements AgentRequest.OnAgentResultCallb
 	private PublicKey getPublicKey(byte[] encodedPublicKey, int algorithmFlag, int format) {
         PublicKey publicKey = null;
 		if (format == SSHAgentApi.X509) {
-			X509EncodedKeySpec spec = new X509EncodedKeySpec(encodedPublicKey);
 			try {
-				KeyFactory kf = KeyFactory.getInstance(translateAlgorithm(algorithmFlag));
-				publicKey = kf.generatePublic(spec);
-//			publicKey = PubkeyUtils.decodePublic(encodedPublicKey, algorithm);
+				publicKey = PubkeyUtils.decodePublic(encodedPublicKey, translateAlgorithm(algorithmFlag));
 			} catch (NoSuchAlgorithmException e) {
 				e.printStackTrace();
 				return null;
