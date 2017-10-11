@@ -32,7 +32,7 @@ import org.connectbot.util.AgentDatabase;
 import org.connectbot.util.AgentKeySelectionManager;
 import org.connectbot.util.HostDatabase;
 import org.connectbot.views.CheckableMenuItem;
-import org.openintents.ssh.GetPublicKeyResponse;
+import org.openintents.ssh.PublicKeyResponse;
 import org.openintents.ssh.SshAgentApi;
 
 import android.content.ContentValues;
@@ -874,13 +874,13 @@ public class HostEditorFragment extends Fragment {
 			Context context = hostEditorFragment.getContext();
 			int resultCode = msg.what;
 
-			if (resultCode == GetPublicKeyResponse.RESULT_CODE_SUCCESS) {
+			if (resultCode == PublicKeyResponse.RESULT_CODE_SUCCESS) {
 				AgentBean agentBean = msg.getData().getParcelable(AGENT_BEAN);
 
 				hostEditorFragment.mListener.onAgentConfigured(agentBean);
 				hostEditorFragment.mPubkeyText.setText(hostEditorFragment.getAgentKeyDescription(agentBean));
 				Toast.makeText(context, R.string.Agent_selection_successful, Toast.LENGTH_SHORT).show();
-			} else if (resultCode == GetPublicKeyResponse.RESULT_CODE_CANCEL) {
+			} else if (resultCode == PublicKeyResponse.RESULT_CODE_CANCEL) {
 				Toast.makeText(context, R.string.Agent_selection_cancelled, Toast.LENGTH_SHORT).show();
 			} else {
 				Toast.makeText(context, R.string.Agent_selection_failed, Toast.LENGTH_SHORT).show();

@@ -24,9 +24,9 @@ import java.security.spec.InvalidKeySpecException;
 
 import org.connectbot.bean.AgentBean;
 import org.connectbot.service.AgentManager;
-import org.openintents.ssh.GetPublicKeyResponse;
+import org.openintents.ssh.PublicKeyResponse;
 import org.openintents.ssh.SshAgentApi;
-import org.openintents.ssh.utils.GetPublicKeyRequest;
+import org.openintents.ssh.utils.PublicKeyRequest;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -74,13 +74,13 @@ public class AgentKeySelectionManager {
 
 	}
 
-	public void updateFragment(GetPublicKeyResponse response) {
+	public void updateFragment(PublicKeyResponse response) {
 		assert response != null; // response is never null anyway, so silence the warning
 		int resultCode = response.getResultCode();
 
 		Message message = updateHandler.obtainMessage(resultCode);
 
-		if (resultCode == GetPublicKeyResponse.RESULT_CODE_SUCCESS) {
+		if (resultCode == PublicKeyResponse.RESULT_CODE_SUCCESS) {
 			Bundle bundle = new Bundle();
 
 			byte[] encodedPublicKey = response.getEncodedPublicKey();
@@ -90,7 +90,7 @@ public class AgentKeySelectionManager {
 			// try decoding the encoded key to make sure it can be used for authentication later
 			PublicKey publicKey = getPublicKey(encodedPublicKey, algorithm, format);
 			if (publicKey == null) {
-				message.what = GetPublicKeyResponse.RESULT_CODE_ERROR;
+				message.what = PublicKeyResponse.RESULT_CODE_ERROR;
 				message.sendToTarget();
 				return;
 			}
@@ -101,7 +101,7 @@ public class AgentKeySelectionManager {
 				agentBean.setKeyType(translateAlgorithm(algorithm));
 			} catch (NoSuchAlgorithmException e) {
 				e.printStackTrace();
-				message.what = GetPublicKeyResponse.RESULT_CODE_ERROR;
+				message.what = PublicKeyResponse.RESULT_CODE_ERROR;
 				message.sendToTarget();
 				return;
 			}
@@ -149,7 +149,7 @@ public class AgentKeySelectionManager {
 
 	private void getKey(String targetPackage) {
 
-		Intent request = new GetPublicKeyRequest().toIntent();
+		Intent request = new PublicKeyRequest().toIntent();
 
 		AgentRequest agentRequest = new AgentRequest(request, targetPackage);
 		agentRequest.setAgentResultHandler(mResultHandler);
@@ -175,7 +175,7 @@ public class AgentKeySelectionManager {
 			}
 
 			Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_RESULT);
-			agentKeySelectionManager.updateFragment(new GetPublicKeyResponse(result));
+			agentKeySelectionManager.updateFragment(new PublicKeyResponse(result));
 		}
 	}
 }
