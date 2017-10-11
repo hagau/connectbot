@@ -275,7 +275,8 @@
   <string name="key_type_ed25519">Ed25519</string>
   <string name="key_type_unknown">Schlüsseltyp unbekannt</string>
   <string name="key_attribute_encrypted">(verschlüsselt)</string>
-  <string name="selected_Agent_res">Ausgewählter Agent:</string>
+  <string name="selected_Agent_res">Agent:</string>
+  <string name="selected_Agent_Key">Schlüssel:</string>
   <string name="Agent_selection_failed">Agent-Auswahl fehlgeschlagen</string>
   <string name="Agent_selection_cancelled">Agent-Auswahl abgebrochen</string>
   <string name="Agent_selection_successful">Agent-Auswahl erfolgreich</string>

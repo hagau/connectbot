@@ -676,7 +676,8 @@
 	     Added to the end of a key description to indicate that the key is encrypted (i.e,
 	     password protected). -->
 	<string name="key_attribute_encrypted">(encrypted)</string>
-    <string name="selected_Agent_res">Selected Agent:</string>
+	<string name="selected_Agent_res">Agent:</string>
+	<string name="selected_Agent_key">Key:</string>
 	<string name="Agent_selection_failed">Agent selection failed</string>
 	<string name="Agent_selection_cancelled">Agent selection cancelled</string>
 	<string name="Agent_selection_successful">Agent selection successful</string>

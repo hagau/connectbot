@@ -371,7 +371,7 @@ public class HostEditorFragment extends Fragment {
 			AgentDatabase agentDatabase = AgentDatabase.get(getContext());
 			AgentBean agentBean = agentDatabase.findAgentById(mHost.getAuthAgentId());
 			if (agentBean != null) {
-				mPubkeyText.setText(getString(R.string.selected_Agent_res) + agentBean.getAgentAppName(getContext()) + " (" + agentBean.getKeyIdentifier() + ")");
+				mPubkeyText.setText(getAgentKeyDescription(agentBean));
 			}
 		} else {
 			for (int i = 0; i < mPubkeyValues.size(); i++) {
@@ -510,6 +510,14 @@ public class HostEditorFragment extends Fragment {
 		setUriPartsContainerExpanded(mIsUriEditorExpanded);
 
 		return view;
+	}
+
+	private String getAgentKeyDescription(AgentBean agentBean) {
+		return getString(R.string.selected_Agent_res) +" "
+				+ agentBean.getAgentAppName(getContext())
+				+ "\n"
+				+ getString(R.string.selected_Agent_key) +" "
+				+ agentBean.getDescription();
 	}
 
 	private void selectKey() {
@@ -870,8 +878,7 @@ public class HostEditorFragment extends Fragment {
 				AgentBean agentBean = msg.getData().getParcelable(AGENT_BEAN);
 
 				hostEditorFragment.mListener.onAgentConfigured(agentBean);
-				String description = hostEditorFragment.getString(R.string.selected_Agent_res) +" "+ agentBean.getDescription();
-				hostEditorFragment.mPubkeyText.setText(description);
+				hostEditorFragment.mPubkeyText.setText(hostEditorFragment.getAgentKeyDescription(agentBean));
 				Toast.makeText(context, R.string.Agent_selection_successful, Toast.LENGTH_SHORT).show();
 			} else if (resultCode == GetPublicKeyResponse.RESULT_CODE_CANCEL) {
 				Toast.makeText(context, R.string.Agent_selection_cancelled, Toast.LENGTH_SHORT).show();
