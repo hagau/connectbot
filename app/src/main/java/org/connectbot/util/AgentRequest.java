@@ -18,21 +18,18 @@
 package org.connectbot.util;
 
 import android.content.Intent;
+import android.os.Handler;
 
 public class AgentRequest {
 
-	public static String AGENT_REQUEST_PENDINGINTENT_RESULT = "org.connectbot.util.AgentRequest.PENDINGINTENT_RESULT";
-	public static String AGENT_REQUEST_PENDINGINTENT= "org.connectbot.util.AgentRequest.PENDINGINTENT";
+	public static String AGENT_REQUEST_PENDINGINTENT = "pending_intent";
+	public static String AGENT_REQUEST_RESULT = "result";
 	public static int AGENT_REQUEST_CODE = 0;
 
 	public static final String REQUEST_ID = "request_id";
 	public static final int REQUEST_ID_NONE = -1;
 
-	public interface OnAgentResultCallback {
-		void onAgentResult(Intent data);
-	}
-
-	private OnAgentResultCallback mAgentResultCallback;
+	private Handler mAgentResultHandler;
 
 	private String mTargetPackage;
 
@@ -53,12 +50,12 @@ public class AgentRequest {
 		mTargetPackage = targetPackage;
 	}
 
-	public OnAgentResultCallback getAgentResultCallback() {
-		return mAgentResultCallback;
+	public Handler getAgentResultHandler() {
+		return mAgentResultHandler;
 	}
 
-	public void setAgentResultCallback(OnAgentResultCallback agentResultCallback) {
-		mAgentResultCallback = agentResultCallback;
+	public void setAgentResultHandler(Handler agentResultHandler) {
+		mAgentResultHandler = agentResultHandler;
 	}
 
 	public Intent getRequest() {

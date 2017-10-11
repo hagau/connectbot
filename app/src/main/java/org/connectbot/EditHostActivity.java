@@ -73,8 +73,7 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 	private ServiceConnection agentConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			agentManager = ((AgentManager.AgentBinder) service).getService();
-//			agentManager.setActivityHandler(agentHandler);
-			agentManager.setActivity(EditHostActivity.this);
+			agentManager.setActivityHandler(agentHandler);
 		}
 
 		public void onServiceDisconnected(ComponentName className) {
@@ -371,16 +370,6 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
 
 		agentManager.processPendingIntentResult(data);
-
-//		Handler handler = agentManager.getPendingIntentResultHandler();
-//
-//		Bundle bundle = new Bundle();
-//		bundle.putParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT_RESULT, data);
-//
-//		Message message = handler.obtainMessage();
-//		message.setData(bundle);
-//
-//		handler.sendMessage(message);
     }
 
 	private Handler agentHandler = new AgentHandler(new WeakReference<>((Activity) this));

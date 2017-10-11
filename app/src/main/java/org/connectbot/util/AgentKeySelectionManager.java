@@ -17,11 +17,10 @@
 
 package org.connectbot.util;
 
-import java.security.KeyFactory;
+import java.lang.ref.WeakReference;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 
 import org.connectbot.bean.AgentBean;
 import org.connectbot.service.AgentManager;
@@ -40,7 +39,7 @@ import android.os.Message;
 import android.util.Log;
 
 
-public class AgentKeySelectionManager implements AgentRequest.OnAgentResultCallback {
+public class AgentKeySelectionManager {
 	public static final String AGENT_BEAN = "agent_bean";
 
 	protected AgentManager agentManager = null;
@@ -153,14 +152,31 @@ public class AgentKeySelectionManager implements AgentRequest.OnAgentResultCallb
 		Intent request = new GetPublicKeyRequest().toIntent();
 
 		AgentRequest agentRequest = new AgentRequest(request, targetPackage);
-		agentRequest.setAgentResultCallback(this);
+		agentRequest.setAgentResultHandler(mResultHandler);
 
 		agentManager.execute(agentRequest);
 
     }
 
-    public void onAgentResult(Intent data) {
-		updateFragment(new GetPublicKeyResponse(data));
+	private ResultHandler mResultHandler = new ResultHandler(new WeakReference<>(this));
+
+	private static class ResultHandler extends Handler {
+		private WeakReference<AgentKeySelectionManager> sshAgentSignatureProxyWeakReference;
+
+		public ResultHandler(WeakReference<AgentKeySelectionManager> sshAgentSignatureProxyWeakReference) {
+			this.sshAgentSignatureProxyWeakReference = sshAgentSignatureProxyWeakReference;
+		}
+
+		@Override
+		public void handleMessage(Message msg) {
+			AgentKeySelectionManager agentKeySelectionManager = sshAgentSignatureProxyWeakReference.get();
+			if (agentKeySelectionManager == null) {
+				return;
+			}
+
+			Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_RESULT);
+			agentKeySelectionManager.updateFragment(new GetPublicKeyResponse(result));
+		}
 	}
 }
 

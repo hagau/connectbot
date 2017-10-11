@@ -18,6 +18,7 @@
 package org.connectbot.util;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.concurrent.CountDownLatch;
@@ -35,22 +36,27 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 
 
-public class SshAgentSignatureProxy extends SignatureProxy implements AgentRequest.OnAgentResultCallback {
+public class SshAgentSignatureProxy extends SignatureProxy {
 
 	private Context mAppContext;
 
     private AgentBean mAgentBean;
 
-	private CountDownLatch mExecutionLatch;
-
-	private Intent mResult;
 	private AgentRequest mAgentRequest;
 
-	protected AgentManager agentManager = null;
+	private Intent mResult;
+
+	private Handler mResultHandler;
+
+	private AgentManager agentManager = null;
+
 	private ServiceConnection agentConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			agentManager = ((AgentManager.AgentBinder) service).getService();
@@ -70,6 +76,9 @@ public class SshAgentSignatureProxy extends SignatureProxy implements AgentReque
         super(PubkeyUtils.decodePublic(mAgentBean.getPublicKey(), mAgentBean.getKeyType()));
 		this.mAppContext = mAppContext;
         this.mAgentBean = mAgentBean;
+
+		Looper.prepare();
+		mResultHandler = new ResultHandler(new WeakReference<>(this));
     }
 
     @Override
@@ -79,19 +88,13 @@ public class SshAgentSignatureProxy extends SignatureProxy implements AgentReque
         Intent request = new SigningRequest(challenge, mAgentBean.getKeyIdentifier(), translateHashAlgorithm(hashAlgorithm)).toIntent();
 
 		mAgentRequest = new AgentRequest(request, mAgentBean.getPackageName());
-		mAgentRequest.setAgentResultCallback(this);
+		mAgentRequest.setAgentResultHandler(mResultHandler);
 
-		mExecutionLatch = new CountDownLatch(1);
 		mAppContext.bindService(new Intent(mAppContext, AgentManager.class), agentConnection, Context.BIND_AUTO_CREATE);
 
-		// this is always run from a connection thread,
-		// never the main thread, so locking is acceptable
-		mExecutionLatch = new CountDownLatch(1);
-		try { // wait for result
-			mExecutionLatch.await();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		// this is always run from a connection thread, never the main thread
+		// wait for message on Handler
+		Looper.loop();
 
 		if (mResult == null) {
 			return null;
@@ -122,9 +125,24 @@ public class SshAgentSignatureProxy extends SignatureProxy implements AgentReque
 		}
 	}
 
-	public void onAgentResult(Intent data) {
-		mResult = data;
-		mExecutionLatch.countDown();
+	private static class ResultHandler extends Handler {
+		private WeakReference<SshAgentSignatureProxy> sshAgentSignatureProxyWeakReference;
+
+		public ResultHandler(WeakReference<SshAgentSignatureProxy> sshAgentSignatureProxyWeakReference) {
+			this.sshAgentSignatureProxyWeakReference = sshAgentSignatureProxyWeakReference;
+		}
+
+		@Override
+		public void handleMessage(Message msg) {
+			SshAgentSignatureProxy sshAgentSignatureProxy = sshAgentSignatureProxyWeakReference.get();
+			if (sshAgentSignatureProxy == null) {
+				return;
+			}
+
+			Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_RESULT);
+			sshAgentSignatureProxy.mResult = result;
+			Looper.myLooper().quit();
+		}
 	}
 
 }

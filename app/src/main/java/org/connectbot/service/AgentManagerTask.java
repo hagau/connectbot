@@ -19,8 +19,8 @@ package org.connectbot.service;
 
 import org.connectbot.util.AgentRequest;
 import org.openintents.ssh.ISSHAgentService;
-import org.openintents.ssh.SshAgentConnection;
 import org.openintents.ssh.SshAgentApi;
+import org.openintents.ssh.SshAgentConnection;
 
 import android.app.PendingIntent;
 import android.content.Context;
@@ -38,11 +38,9 @@ public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 
 	private AgentRequest mAgentRequest;
 
-	private ISSHAgentService mService;
-
-	public AgentManagerTask(Handler activityHandler, Context appContext) {
-		mActivityHandler = activityHandler;
+	public AgentManagerTask(Context appContext, Handler activityHandler) {
 		mAppContext = appContext;
+		mActivityHandler = activityHandler;
 	}
 
 	public void execute(final AgentRequest agentRequest) {
@@ -52,7 +50,6 @@ public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 		agentConnection.connect(new SshAgentConnection.OnBound() {
 			@Override
 			public void onBound(ISSHAgentService sshAgent) {
-				mService = sshAgent;
 				executeInternal(sshAgent);
 				agentConnection.disconnect();
 			}
@@ -63,7 +60,7 @@ public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 		});
 	}
 
-	public void executeInternal(ISSHAgentService sshAgent) {
+	private void executeInternal(ISSHAgentService sshAgent) {
 		Log.d(getClass().toString(), "====>>>> executing request in tid: "+ android.os.Process.myTid());
 
 		SshAgentApi agentApi = new SshAgentApi(sshAgent);
@@ -74,20 +71,36 @@ public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 		switch (statusCode) {
 		case SshAgentApi.RESULT_CODE_SUCCESS:
 		case SshAgentApi.RESULT_CODE_FAILURE:
-			mAgentRequest.getAgentResultCallback().onAgentResult(response);
+			sendResult(response);
 			return;
 		case SshAgentApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
-			// send back via handler to activity to execute
-			PendingIntent pendingIntent = response.getParcelableExtra(SshAgentApi.EXTRA_PENDING_INTENT);
-
-			Bundle bundle = new Bundle();
-			bundle.putParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT, pendingIntent);
-
-			Message message = mActivityHandler.obtainMessage();
-			message.setData(bundle);
-
-			mActivityHandler.sendMessage(message);
+			sendPendingIntent(response);
 		}
+	}
+
+	private void sendResult(Intent response) {
+		Handler resultHandler = mAgentRequest.getAgentResultHandler();
+
+		Bundle bundle = new Bundle();
+		bundle.putParcelable(AgentRequest.AGENT_REQUEST_RESULT, response);
+
+		Message message = resultHandler.obtainMessage();
+		message.setData(bundle);
+
+		message.sendToTarget();
+	}
+
+	private void sendPendingIntent(Intent data) {
+		// send back via handler to activity to execute
+		PendingIntent pendingIntent = data.getParcelableExtra(SshAgentApi.EXTRA_PENDING_INTENT);
+
+		Bundle bundle = new Bundle();
+		bundle.putParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT, pendingIntent);
+
+		Message message = mActivityHandler.obtainMessage();
+		message.setData(bundle);
+
+		message.sendToTarget();
 	}
 
 	@Override
