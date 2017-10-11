@@ -84,7 +84,7 @@ public class AgentManager extends Service {
 			// execute received Intent again for result
 			execute(agentRequest);
 		} else {
-			agentRequest.getAgentResultHandler().sendEmptyMessage(SshAgentApi.RESULT_CODE_FAILURE);
+			agentRequest.getAgentResultHandler().sendEmptyMessage(SshAgentApi.RESULT_CODE_ERROR);
 			mAgentRequests.remove(requestId);
 		}
 	}

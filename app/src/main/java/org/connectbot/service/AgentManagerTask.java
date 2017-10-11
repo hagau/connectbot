@@ -66,11 +66,11 @@ public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 		SshAgentApi agentApi = new SshAgentApi(sshAgent);
 
 		Intent response = agentApi.executeApi(mAgentRequest.getRequest());
-		int statusCode = response.getIntExtra(SshAgentApi.EXTRA_RESULT_CODE, SshAgentApi.RESULT_CODE_FAILURE);
+		int statusCode = response.getIntExtra(SshAgentApi.EXTRA_RESULT_CODE, SshAgentApi.RESULT_CODE_ERROR);
 
 		switch (statusCode) {
 		case SshAgentApi.RESULT_CODE_SUCCESS:
-		case SshAgentApi.RESULT_CODE_FAILURE:
+		case SshAgentApi.RESULT_CODE_ERROR:
 			sendResult(response);
 			return;
 		case SshAgentApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
