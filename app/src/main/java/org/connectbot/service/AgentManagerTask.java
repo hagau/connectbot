@@ -18,7 +18,7 @@
 package org.connectbot.service;
 
 import org.connectbot.util.AgentRequest;
-import org.openintents.ssh.ISSHAgentService;
+import org.openintents.ssh.ISshAgentService;
 import org.openintents.ssh.SshAgentApi;
 import org.openintents.ssh.SshAgentConnection;
 
@@ -49,7 +49,7 @@ public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 
 		agentConnection.connect(new SshAgentConnection.OnBound() {
 			@Override
-			public void onBound(ISSHAgentService sshAgent) {
+			public void onBound(ISshAgentService sshAgent) {
 				executeInternal(sshAgent);
 				agentConnection.disconnect();
 			}
@@ -60,7 +60,7 @@ public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 		});
 	}
 
-	private void executeInternal(ISSHAgentService sshAgent) {
+	private void executeInternal(ISshAgentService sshAgent) {
 		Log.d(getClass().toString(), "====>>>> executing request in tid: "+ android.os.Process.myTid());
 
 		SshAgentApi agentApi = new SshAgentApi(sshAgent);

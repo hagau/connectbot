@@ -26,7 +26,7 @@ import org.connectbot.bean.AgentBean;
 import org.connectbot.service.AgentManager;
 import org.openintents.ssh.PublicKeyResponse;
 import org.openintents.ssh.SshAgentApi;
-import org.openintents.ssh.utils.PublicKeyRequest;
+import org.openintents.ssh.PublicKeyRequest;
 
 import android.content.ComponentName;
 import android.content.Context;
