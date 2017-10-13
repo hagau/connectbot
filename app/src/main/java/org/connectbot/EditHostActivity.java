@@ -17,30 +17,10 @@
 
 package org.connectbot;
 
-import java.lang.ref.WeakReference;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
-import android.app.Activity;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.content.res.TypedArray;
-import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
-import android.support.v4.app.FragmentManager;
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 
 import org.connectbot.bean.AgentBean;
 import org.connectbot.bean.HostBean;
@@ -48,10 +28,24 @@ import org.connectbot.service.AgentManager;
 import org.connectbot.service.TerminalBridge;
 import org.connectbot.service.TerminalManager;
 import org.connectbot.util.AgentDatabase;
-import org.connectbot.util.AgentHandler;
-import org.connectbot.util.AgentRequest;
 import org.connectbot.util.HostDatabase;
 import org.connectbot.util.PubkeyDatabase;
+
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.res.TypedArray;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.IBinder;
+import android.support.v4.app.FragmentManager;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 
 public class EditHostActivity extends AppCompatActivity implements HostEditorFragment.Listener {
 
@@ -73,7 +67,7 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 	private ServiceConnection agentConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			agentManager = ((AgentManager.AgentBinder) service).getService();
-			agentManager.setActivityHandler(agentHandler);
+			agentManager.setActivity(EditHostActivity.this);
 		}
 
 		public void onServiceDisconnected(ComponentName className) {
@@ -369,9 +363,7 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
         super.onActivityResult(requestCode, resultCode, data);
 		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
 
-		agentManager.processPendingIntentResult(data);
+		agentManager.processPendingIntentResult(requestCode, resultCode, data);
     }
-
-	private Handler agentHandler = new AgentHandler(new WeakReference<>((Activity) this));
 
 }

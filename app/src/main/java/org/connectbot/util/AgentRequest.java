@@ -24,10 +24,12 @@ public class AgentRequest {
 
 	public static String AGENT_REQUEST_PENDINGINTENT = "pending_intent";
 	public static String AGENT_REQUEST_RESULT = "result";
-	public static int AGENT_REQUEST_CODE = 0;
+
+	public static int AGENT_REQUEST_CODE = 1729;
 
 	public static final String REQUEST_ID = "request_id";
 	public static final int REQUEST_ID_NONE = -1;
+	public static final String TARGET_PACKAGE = "target_package";
 
 	private Handler mAgentResultHandler;
 
@@ -44,10 +46,6 @@ public class AgentRequest {
 
 	public String getTargetPackage() {
 		return mTargetPackage;
-	}
-
-	public void setTargetPackage(String targetPackage) {
-		mTargetPackage = targetPackage;
 	}
 
 	public Handler getAgentResultHandler() {

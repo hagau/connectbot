@@ -21,11 +21,9 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.concurrent.CountDownLatch;
 
 import org.connectbot.bean.AgentBean;
 import org.connectbot.service.AgentManager;
-import org.openintents.ssh.SshAgentApi;
 import org.openintents.ssh.SigningRequest;
 import org.openintents.ssh.SshAgentApi;
 import org.openintents.ssh.SshAgentApiError;
@@ -77,6 +75,7 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 		this.mAppContext = mAppContext;
         this.mAgentBean = mAgentBean;
 
+		// this is always run from a connection thread, which is a bare Thread
 		Looper.prepare();
 		mResultHandler = new ResultHandler(new WeakReference<>(this));
     }
@@ -141,6 +140,7 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 
 			Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_RESULT);
 			sshAgentSignatureProxy.mResult = result;
+			sshAgentSignatureProxy.mAppContext.unbindService(sshAgentSignatureProxy.agentConnection);
 			Looper.myLooper().quit();
 		}
 	}

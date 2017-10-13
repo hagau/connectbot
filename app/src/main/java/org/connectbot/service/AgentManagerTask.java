@@ -33,14 +33,14 @@ import android.util.Log;
 
 public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 
-	private Handler mActivityHandler;
+	private Handler mAgentManagerHandler;
 	private Context mAppContext;
 
 	private AgentRequest mAgentRequest;
 
-	public AgentManagerTask(Context appContext, Handler activityHandler) {
+	public AgentManagerTask(Context appContext, Handler agentManagerHandler) {
 		mAppContext = appContext;
-		mActivityHandler = activityHandler;
+		mAgentManagerHandler = agentManagerHandler;
 	}
 
 	public void execute(final AgentRequest agentRequest) {
@@ -79,25 +79,24 @@ public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 	}
 
 	private void sendResult(Intent response) {
-		Handler resultHandler = mAgentRequest.getAgentResultHandler();
-
 		Bundle bundle = new Bundle();
 		bundle.putParcelable(AgentRequest.AGENT_REQUEST_RESULT, response);
-
-		Message message = resultHandler.obtainMessage();
-		message.setData(bundle);
-
-		message.sendToTarget();
+		sendBundle(bundle);
 	}
 
 	private void sendPendingIntent(Intent data) {
-		// send back via handler to activity to execute
+		// send back via handler to agentManager to execute
 		PendingIntent pendingIntent = data.getParcelableExtra(SshAgentApi.EXTRA_PENDING_INTENT);
 
 		Bundle bundle = new Bundle();
 		bundle.putParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT, pendingIntent);
+		sendBundle(bundle);
+	}
 
-		Message message = mActivityHandler.obtainMessage();
+	private void sendBundle(Bundle bundle) {
+		bundle.putInt(AgentRequest.REQUEST_ID, mAgentRequest.getRequestId());
+
+		Message message = mAgentManagerHandler.obtainMessage();
 		message.setData(bundle);
 
 		message.sendToTarget();

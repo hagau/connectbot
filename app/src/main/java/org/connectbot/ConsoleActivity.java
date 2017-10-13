@@ -28,21 +28,16 @@ import org.connectbot.service.PromptHelper;
 import org.connectbot.service.TerminalBridge;
 import org.connectbot.service.TerminalKeyListener;
 import org.connectbot.service.TerminalManager;
-import org.connectbot.util.AgentHandler;
-import org.connectbot.util.AgentRequest;
 import org.connectbot.util.PreferenceConstants;
 import org.connectbot.util.TerminalViewPager;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.Dialog;
-import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
@@ -206,7 +201,7 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 	private ServiceConnection agentConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			agentManager = ((AgentManager.AgentBinder) service).getService();
-			agentManager.setActivityHandler(agentHandler);
+			agentManager.setActivity(ConsoleActivity.this);
 		}
 
 		public void onServiceDisconnected(ComponentName className) {
@@ -493,7 +488,6 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
 
-		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
 			StrictModeSetup.run();
 		}
@@ -751,6 +745,7 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 				}
 			});
 
+		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
 		bindService(new Intent(this, AgentManager.class), agentConnection, Context.BIND_AUTO_CREATE);
 	}
 
@@ -1121,6 +1116,8 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+
+		// TODO: wrong, service needs to always run for possible background reconnects
 		unbindService(agentConnection);
 	}
 
@@ -1401,8 +1398,7 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
         super.onActivityResult(requestCode, resultCode, data);
 		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
 
-		agentManager.processPendingIntentResult(data);
+		agentManager.processPendingIntentResult(requestCode, resultCode, data);
     }
 
-	private Handler agentHandler = new AgentHandler(new WeakReference<>((Activity) this));
 }

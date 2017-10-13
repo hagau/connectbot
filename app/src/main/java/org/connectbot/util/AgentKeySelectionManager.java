@@ -43,6 +43,7 @@ public class AgentKeySelectionManager {
 	public static final String AGENT_BEAN = "agent_bean";
 
 	protected AgentManager agentManager = null;
+
 	private ServiceConnection agentConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			agentManager = ((AgentManager.AgentBinder) service).getService();
@@ -176,6 +177,8 @@ public class AgentKeySelectionManager {
 
 			Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_RESULT);
 			agentKeySelectionManager.updateFragment(new PublicKeyResponse(result));
+
+			agentKeySelectionManager.appContext.unbindService(agentKeySelectionManager.agentConnection);
 		}
 	}
 }
