@@ -41,6 +41,9 @@ import android.util.Log;
 
 public class AgentKeySelectionManager {
 	public static final String AGENT_BEAN = "agent_bean";
+	public static final int RESULT_CODE_ERROR = SshAgentApi.RESULT_CODE_ERROR;
+	public static final int RESULT_CODE_SUCCESS = SshAgentApi.RESULT_CODE_SUCCESS;
+	public static final int RESULT_CODE_CANCELED = AgentManager.RESULT_CODE_CANCELED;
 
 	protected AgentManager agentManager = null;
 
@@ -76,8 +79,12 @@ public class AgentKeySelectionManager {
 	}
 
 	public void updateFragment(PublicKeyResponse response) {
-		assert response != null; // response is never null anyway, so silence the warning
-		int resultCode = response.getResultCode();
+		int resultCode;
+		if (response == null) {
+			resultCode = RESULT_CODE_CANCELED;
+		} else {
+			resultCode = response.getResultCode();
+		}
 
 		Message message = updateHandler.obtainMessage(resultCode);
 
@@ -175,8 +182,12 @@ public class AgentKeySelectionManager {
 				return;
 			}
 
-			Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_RESULT);
-			agentKeySelectionManager.updateFragment(new PublicKeyResponse(result));
+			if (msg.what == AgentManager.RESULT_CODE_CANCELED) {
+				agentKeySelectionManager.updateFragment(null);
+			} else {
+				Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_RESULT);
+				agentKeySelectionManager.updateFragment(new PublicKeyResponse(result));
+			}
 
 			agentKeySelectionManager.appContext.unbindService(agentKeySelectionManager.agentConnection);
 		}

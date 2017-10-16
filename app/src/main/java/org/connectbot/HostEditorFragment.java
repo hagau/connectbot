@@ -874,13 +874,13 @@ public class HostEditorFragment extends Fragment {
 			Context context = hostEditorFragment.getContext();
 			int resultCode = msg.what;
 
-			if (resultCode == PublicKeyResponse.RESULT_CODE_SUCCESS) {
+			if (resultCode == AgentKeySelectionManager.RESULT_CODE_SUCCESS) {
 				AgentBean agentBean = msg.getData().getParcelable(AGENT_BEAN);
 
 				hostEditorFragment.mListener.onAgentConfigured(agentBean);
 				hostEditorFragment.mPubkeyText.setText(hostEditorFragment.getAgentKeyDescription(agentBean));
 				Toast.makeText(context, R.string.Agent_selection_successful, Toast.LENGTH_SHORT).show();
-			} else if (resultCode == PublicKeyResponse.RESULT_CODE_CANCEL) {
+			} else if (resultCode == AgentKeySelectionManager.RESULT_CODE_CANCELED) {
 				Toast.makeText(context, R.string.Agent_selection_cancelled, Toast.LENGTH_SHORT).show();
 			} else {
 				Toast.makeText(context, R.string.Agent_selection_failed, Toast.LENGTH_SHORT).show();

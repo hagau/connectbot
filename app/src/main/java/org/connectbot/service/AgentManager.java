@@ -39,6 +39,8 @@ import android.util.Log;
 
 public class AgentManager extends Service {
 
+	public static final int RESULT_CODE_CANCELED = -1;
+
 	private WeakReference<Activity> mActivityWeakReference;
 
 	private HashMap<Integer, AgentRequest> mAgentRequests = new HashMap<>();
@@ -92,7 +94,7 @@ public class AgentManager extends Service {
 	public void processPendingIntentResult(int requestCode, int resultCode, Intent result) {
 		int requestId = mPendingIntentsIdQueue.poll();
 		if (resultCode == Activity.RESULT_CANCELED) {
-			mAgentRequests.get(requestId).getAgentResultHandler().sendEmptyMessage(SshAgentApi.RESULT_CODE_ERROR);
+			mAgentRequests.get(requestId).getAgentResultHandler().sendEmptyMessage(RESULT_CODE_CANCELED);
 			dropRequest(requestId);
 			return;
 		}

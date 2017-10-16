@@ -53,16 +53,16 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 
 	private Handler mResultHandler;
 
-	private AgentManager agentManager = null;
+	private AgentManager mAgentManager = null;
 
 	private ServiceConnection agentConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
-			agentManager = ((AgentManager.AgentBinder) service).getService();
-			agentManager.execute(mAgentRequest);
+			mAgentManager = ((AgentManager.AgentBinder) service).getService();
+			mAgentManager.execute(mAgentRequest);
 		}
 
 		public void onServiceDisconnected(ComponentName className) {
-			agentManager = null;
+			mAgentManager = null;
 		}
 	};
 
@@ -95,7 +95,7 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 		// wait for message on Handler
 		Looper.loop();
 
-		if (mResult == null) {
+		if (mResult == null) { // canceled
 			return null;
 		}
 
