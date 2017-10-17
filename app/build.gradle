@@ -165,7 +165,7 @@ android {
 // Dependencies must be below the android block to allow productFlavor specific deps.
 dependencies {
     compile project(':sshlib')
-    compile project(':sshagent-api')
+    compile project(':sshauthentication-api')
     googleCompile 'com.google.android.gms:play-services-base:10.0.1'
     ossCompile 'org.conscrypt:conscrypt-android:1.0.0.RC2'
 

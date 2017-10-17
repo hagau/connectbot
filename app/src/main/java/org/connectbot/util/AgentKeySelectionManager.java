@@ -24,9 +24,9 @@ import java.security.spec.InvalidKeySpecException;
 
 import org.connectbot.bean.AgentBean;
 import org.connectbot.service.AgentManager;
-import org.openintents.ssh.PublicKeyResponse;
-import org.openintents.ssh.SshAgentApi;
-import org.openintents.ssh.PublicKeyRequest;
+import org.openintents.ssh.authentication.SshAuthenticationApi;
+import org.openintents.ssh.authentication.request.PublicKeyRequest;
+import org.openintents.ssh.authentication.response.PublicKeyResponse;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -41,31 +41,31 @@ import android.util.Log;
 
 public class AgentKeySelectionManager {
 	public static final String AGENT_BEAN = "agent_bean";
-	public static final int RESULT_CODE_ERROR = SshAgentApi.RESULT_CODE_ERROR;
-	public static final int RESULT_CODE_SUCCESS = SshAgentApi.RESULT_CODE_SUCCESS;
+	public static final int RESULT_CODE_ERROR = SshAuthenticationApi.RESULT_CODE_ERROR;
+	public static final int RESULT_CODE_SUCCESS = SshAuthenticationApi.RESULT_CODE_SUCCESS;
 	public static final int RESULT_CODE_CANCELED = AgentManager.RESULT_CODE_CANCELED;
 
-	protected AgentManager agentManager = null;
+	private AgentManager mAgentManager = null;
 
-	private ServiceConnection agentConnection = new ServiceConnection() {
+	private ServiceConnection mAgentConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
-			agentManager = ((AgentManager.AgentBinder) service).getService();
-			getKey(agentName);
+			mAgentManager = ((AgentManager.AgentBinder) service).getService();
+			getKey(mAgentName);
 		}
 
 		public void onServiceDisconnected(ComponentName className) {
-			agentManager = null;
+			mAgentManager = null;
 		}
 	};
 
-	private Context appContext;
-	private String agentName;
-	private Handler updateHandler;
+	private Context mAppContext;
+	private String mAgentName;
+	private Handler mUpdateHandler;
 
-	public AgentKeySelectionManager(Context appContext, String agentName, Handler updateHandler) {
-		this.appContext = appContext;
-		this.agentName = agentName;
-		this.updateHandler = updateHandler;
+	public AgentKeySelectionManager(Context mAppContext, String mAgentName, Handler mUpdateHandler) {
+		this.mAppContext = mAppContext;
+		this.mAgentName = mAgentName;
+		this.mUpdateHandler = mUpdateHandler;
 	}
 
     /**
@@ -74,7 +74,7 @@ public class AgentKeySelectionManager {
 	public void selectKeyFromAgent() {
 		Log.d(getClass().toString(), "====>>>> selectKeyFromAgent tid: "+ android.os.Process.myTid());
 
-		appContext.bindService(new Intent(appContext, AgentManager.class), agentConnection, Context.BIND_AUTO_CREATE);
+		mAppContext.bindService(new Intent(mAppContext, AgentManager.class), mAgentConnection, Context.BIND_AUTO_CREATE);
 
 	}
 
@@ -86,7 +86,7 @@ public class AgentKeySelectionManager {
 			resultCode = response.getResultCode();
 		}
 
-		Message message = updateHandler.obtainMessage(resultCode);
+		Message message = mUpdateHandler.obtainMessage(resultCode);
 
 		if (resultCode == PublicKeyResponse.RESULT_CODE_SUCCESS) {
 			Bundle bundle = new Bundle();
@@ -113,7 +113,7 @@ public class AgentKeySelectionManager {
 				message.sendToTarget();
 				return;
 			}
-			agentBean.setPackageName(agentName);
+			agentBean.setPackageName(mAgentName);
 			agentBean.setDescription(response.getKeyDescription());
 			agentBean.setPublicKey(publicKey.getEncoded());
 
@@ -126,7 +126,7 @@ public class AgentKeySelectionManager {
 
 	private PublicKey getPublicKey(byte[] encodedPublicKey, int algorithmFlag, int format) {
         PublicKey publicKey = null;
-		if (format == SshAgentApi.X509) {
+		if (format == SshAuthenticationApi.X509) {
 			try {
 				publicKey = PubkeyUtils.decodePublic(encodedPublicKey, translateAlgorithm(algorithmFlag));
 			} catch (NoSuchAlgorithmException e) {
@@ -142,13 +142,13 @@ public class AgentKeySelectionManager {
 
 	private String translateAlgorithm(int algorithm) throws NoSuchAlgorithmException {
 		switch (algorithm) {
-		case SshAgentApi.RSA:
+		case SshAuthenticationApi.RSA:
 			return "RSA";
-		case SshAgentApi.DSA:
+		case SshAuthenticationApi.DSA:
 			return "DSA";
-		case SshAgentApi.ECDSA:
+		case SshAuthenticationApi.ECDSA:
 			return "EC";
-		case SshAgentApi.EDDSA:
+		case SshAuthenticationApi.EDDSA:
 			return "Ed25519";
 		default:
 			throw new NoSuchAlgorithmException("Algorithm not supported: "+ algorithm);
@@ -162,7 +162,7 @@ public class AgentKeySelectionManager {
 		AgentRequest agentRequest = new AgentRequest(request, targetPackage);
 		agentRequest.setAgentResultHandler(mResultHandler);
 
-		agentManager.execute(agentRequest);
+		mAgentManager.execute(agentRequest);
 
     }
 
@@ -189,7 +189,7 @@ public class AgentKeySelectionManager {
 				agentKeySelectionManager.updateFragment(new PublicKeyResponse(result));
 			}
 
-			agentKeySelectionManager.appContext.unbindService(agentKeySelectionManager.agentConnection);
+			agentKeySelectionManager.mAppContext.unbindService(agentKeySelectionManager.mAgentConnection);
 		}
 	}
 }

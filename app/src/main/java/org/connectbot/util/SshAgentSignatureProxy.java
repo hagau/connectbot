@@ -24,9 +24,9 @@ import java.security.spec.InvalidKeySpecException;
 
 import org.connectbot.bean.AgentBean;
 import org.connectbot.service.AgentManager;
-import org.openintents.ssh.SigningRequest;
-import org.openintents.ssh.SshAgentApi;
-import org.openintents.ssh.SshAgentApiError;
+import org.openintents.ssh.authentication.SshAuthenticationApi;
+import org.openintents.ssh.authentication.SshAuthenticationApiError;
+import org.openintents.ssh.authentication.request.SigningRequest;
 
 import com.trilead.ssh2.auth.SignatureProxy;
 
@@ -55,7 +55,7 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 
 	private AgentManager mAgentManager = null;
 
-	private ServiceConnection agentConnection = new ServiceConnection() {
+	private ServiceConnection mAgentConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			mAgentManager = ((AgentManager.AgentBinder) service).getService();
 			mAgentManager.execute(mAgentRequest);
@@ -89,7 +89,7 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 		mAgentRequest = new AgentRequest(request, mAgentBean.getPackageName());
 		mAgentRequest.setAgentResultHandler(mResultHandler);
 
-		mAppContext.bindService(new Intent(mAppContext, AgentManager.class), agentConnection, Context.BIND_AUTO_CREATE);
+		mAppContext.bindService(new Intent(mAppContext, AgentManager.class), mAgentConnection, Context.BIND_AUTO_CREATE);
 
 		// this is always run from a connection thread, never the main thread
 		// wait for message on Handler
@@ -99,7 +99,7 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 			return null;
 		}
 
-		byte[] signature = mResult.getByteArrayExtra(SshAgentApi.EXTRA_SIGNATURE);
+		byte[] signature = mResult.getByteArrayExtra(SshAuthenticationApi.EXTRA_SIGNATURE);
 
 		// TODO: error handling
 		if (signature == null) {
@@ -112,15 +112,15 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 	private int translateHashAlgorithm(String hashAlgorithm) {
 		switch (hashAlgorithm) {
 		case SignatureProxy.SHA1:
-			return SshAgentApi.SHA1;
+			return SshAuthenticationApi.SHA1;
 		case SignatureProxy.SHA256:
-			return SshAgentApi.SHA256;
+			return SshAuthenticationApi.SHA256;
 		case SignatureProxy.SHA384:
-			return SshAgentApi.SHA384;
+			return SshAuthenticationApi.SHA384;
 		case SignatureProxy.SHA512:
-			return SshAgentApi.SHA512;
+			return SshAuthenticationApi.SHA512;
 		default:
-			return SshAgentApiError.INVALID_HASH_ALGORITHM;
+			return SshAuthenticationApiError.INVALID_HASH_ALGORITHM;
 		}
 	}
 
@@ -140,7 +140,7 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 
 			Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_RESULT);
 			sshAgentSignatureProxy.mResult = result;
-			sshAgentSignatureProxy.mAppContext.unbindService(sshAgentSignatureProxy.agentConnection);
+			sshAgentSignatureProxy.mAppContext.unbindService(sshAgentSignatureProxy.mAgentConnection);
 			Looper.myLooper().quit();
 		}
 	}

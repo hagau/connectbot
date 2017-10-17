@@ -18,9 +18,9 @@
 package org.connectbot.service;
 
 import org.connectbot.util.AgentRequest;
-import org.openintents.ssh.ISshAgentService;
-import org.openintents.ssh.SshAgentApi;
-import org.openintents.ssh.SshAgentConnection;
+import org.openintents.ssh.authentication.ISshAuthenticationService;
+import org.openintents.ssh.authentication.SshAuthenticationApi;
+import org.openintents.ssh.authentication.SshAuthenticationConnection;
 
 import android.app.PendingIntent;
 import android.content.Context;
@@ -45,11 +45,11 @@ public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 
 	public void execute(final AgentRequest agentRequest) {
 		mAgentRequest = agentRequest;
-		final SshAgentConnection agentConnection = new SshAgentConnection(mAppContext, agentRequest.getTargetPackage());
+		final SshAuthenticationConnection agentConnection = new SshAuthenticationConnection(mAppContext, agentRequest.getTargetPackage());
 
-		agentConnection.connect(new SshAgentConnection.OnBound() {
+		agentConnection.connect(new SshAuthenticationConnection.OnBound() {
 			@Override
-			public void onBound(ISshAgentService sshAgent) {
+			public void onBound(ISshAuthenticationService sshAgent) {
 				executeInternal(sshAgent);
 				agentConnection.disconnect();
 			}
@@ -60,20 +60,20 @@ public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 		});
 	}
 
-	private void executeInternal(ISshAgentService sshAgent) {
+	private void executeInternal(ISshAuthenticationService sshAgent) {
 		Log.d(getClass().toString(), "====>>>> executing request in tid: "+ android.os.Process.myTid());
 
-		SshAgentApi agentApi = new SshAgentApi(sshAgent);
+		SshAuthenticationApi agentApi = new SshAuthenticationApi(mAppContext, sshAgent);
 
 		Intent response = agentApi.executeApi(mAgentRequest.getRequest());
-		int statusCode = response.getIntExtra(SshAgentApi.EXTRA_RESULT_CODE, SshAgentApi.RESULT_CODE_ERROR);
+		int statusCode = response.getIntExtra(SshAuthenticationApi.EXTRA_RESULT_CODE, SshAuthenticationApi.RESULT_CODE_ERROR);
 
 		switch (statusCode) {
-		case SshAgentApi.RESULT_CODE_SUCCESS:
-		case SshAgentApi.RESULT_CODE_ERROR:
+		case SshAuthenticationApi.RESULT_CODE_SUCCESS:
+		case SshAuthenticationApi.RESULT_CODE_ERROR:
 			sendResult(response);
 			return;
-		case SshAgentApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
+		case SshAuthenticationApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
 			sendPendingIntent(response);
 		}
 	}
@@ -85,8 +85,8 @@ public class AgentManagerTask extends AsyncTask<AgentRequest, Void, Void> {
 	}
 
 	private void sendPendingIntent(Intent data) {
-		// send back via handler to agentManager to execute
-		PendingIntent pendingIntent = data.getParcelableExtra(SshAgentApi.EXTRA_PENDING_INTENT);
+		// send back via handler to mAgentManager to execute
+		PendingIntent pendingIntent = data.getParcelableExtra(SshAuthenticationApi.EXTRA_PENDING_INTENT);
 
 		Bundle bundle = new Bundle();
 		bundle.putParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT, pendingIntent);

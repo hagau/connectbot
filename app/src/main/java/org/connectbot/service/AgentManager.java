@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.connectbot.util.AgentRequest;
-import org.openintents.ssh.SshAgentApi;
 
 import android.app.Activity;
 import android.app.PendingIntent;
