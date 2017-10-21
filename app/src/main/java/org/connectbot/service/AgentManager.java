@@ -77,6 +77,12 @@ public class AgentManager extends Service {
 		AgentManagerTask agentManagerTask = new AgentManagerTask(getApplicationContext(), mAgentManagerTaskResultHandler);
 		agentManagerTask.execute(agentRequest);
 
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			agentManagerTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, agentRequest);
+		} else {
+			agentManagerTask.execute(agentRequest);
+		}
+
 	}
 
 	private void register(AgentRequest agentRequest) {
