@@ -118,7 +118,7 @@ public class AgentManager extends Service {
 
 	private AgentResultHandler mAgentManagerTaskResultHandler = new AgentResultHandler(mActivityWeakReference, new WeakReference<>(this));
 
-	public class AgentResultHandler extends Handler {
+	public static class AgentResultHandler extends Handler {
 		private WeakReference<Activity> activityWeakReference;
 		private WeakReference<AgentManager> agentManagerWeakReference;
 
