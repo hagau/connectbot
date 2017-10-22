@@ -18,8 +18,9 @@
 package org.connectbot.service;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.connectbot.util.AgentRequest;
 
@@ -28,7 +29,9 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -44,7 +47,7 @@ public class AgentManager extends Service {
 
 	private HashMap<Integer, AgentRequest> mAgentRequests = new HashMap<>();
 
-	private ConcurrentLinkedQueue<Integer> mPendingIntentsIdQueue = new ConcurrentLinkedQueue<>();
+	private Deque<Integer> mPendingIntentsIdStack = new ArrayDeque<>();
 
 	public void dropRequest(int requestId) {
 		mAgentRequests.remove(requestId);
@@ -97,7 +100,7 @@ public class AgentManager extends Service {
 	}
 
 	public void processPendingIntentResult(int requestCode, int resultCode, Intent result) {
-		int requestId = mPendingIntentsIdQueue.poll();
+		int requestId = mPendingIntentsIdStack.pop();
 		if (resultCode == Activity.RESULT_CANCELED) {
 			mAgentRequests.get(requestId).getAgentResultHandler().sendEmptyMessage(RESULT_CODE_CANCELED);
 			dropRequest(requestId);
@@ -155,7 +158,7 @@ public class AgentManager extends Service {
 
 				// push request id on to a queue so we know which req to remove when cancelled
 				// TODO: this does not work as intended, investigate
-				mPendingIntentsIdQueue.add(requestId);
+				agentManager.mPendingIntentsIdStack.push(requestId);
 
 				activity.startIntentSenderForResult(pendingIntent.getIntentSender(), AgentRequest.AGENT_REQUEST_CODE, null, 0, 0, 0);
 			} catch (IntentSender.SendIntentException e) {
