@@ -93,10 +93,9 @@ public class AgentKeySelectionManager {
 
 			byte[] encodedPublicKey = response.getEncodedPublicKey();
 			int algorithm = response.getKeyAlgorithm();
-			int format = response.getKeyFormat();
 
 			// try decoding the encoded key to make sure it can be used for authentication later
-			PublicKey publicKey = getPublicKey(encodedPublicKey, algorithm, format);
+			PublicKey publicKey = getPublicKey(encodedPublicKey, algorithm);
 			if (publicKey == null) {
 				message.what = PublicKeyResponse.RESULT_CODE_ERROR;
 				message.sendToTarget();
@@ -124,18 +123,16 @@ public class AgentKeySelectionManager {
 		message.sendToTarget();
 	}
 
-	private PublicKey getPublicKey(byte[] encodedPublicKey, int algorithmFlag, int format) {
-        PublicKey publicKey = null;
-		if (format == SshAuthenticationApi.X509) {
-			try {
-				publicKey = PubkeyUtils.decodePublic(encodedPublicKey, translateAlgorithm(algorithmFlag));
-			} catch (NoSuchAlgorithmException e) {
-				e.printStackTrace();
-				return null;
-			} catch (InvalidKeySpecException e) {
-				e.printStackTrace();
-				return null;
-			}
+	private PublicKey getPublicKey(byte[] encodedPublicKey, int algorithmFlag) {
+		PublicKey publicKey = null;
+		try {
+			publicKey = PubkeyUtils.decodePublic(encodedPublicKey, translateAlgorithm(algorithmFlag));
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+			return null;
+		} catch (InvalidKeySpecException e) {
+			e.printStackTrace();
+			return null;
 		}
 		return publicKey;
 	}
