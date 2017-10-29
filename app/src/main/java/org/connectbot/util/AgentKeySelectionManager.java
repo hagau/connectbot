@@ -25,7 +25,9 @@ import java.security.spec.InvalidKeySpecException;
 import org.connectbot.bean.AgentBean;
 import org.connectbot.service.AgentManager;
 import org.openintents.ssh.authentication.SshAuthenticationApi;
+import org.openintents.ssh.authentication.request.KeySelectionRequest;
 import org.openintents.ssh.authentication.request.PublicKeyRequest;
+import org.openintents.ssh.authentication.response.KeySelectionResponse;
 import org.openintents.ssh.authentication.response.PublicKeyResponse;
 
 import android.content.ComponentName;
@@ -50,7 +52,7 @@ public class AgentKeySelectionManager {
 	private ServiceConnection mAgentConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			mAgentManager = ((AgentManager.AgentBinder) service).getService();
-			getKey(mAgentName);
+			getKeyId();
 		}
 
 		public void onServiceDisconnected(ComponentName className) {
@@ -62,10 +64,14 @@ public class AgentKeySelectionManager {
 	private String mAgentName;
 	private Handler mUpdateHandler;
 
-	public AgentKeySelectionManager(Context mAppContext, String mAgentName, Handler mUpdateHandler) {
-		this.mAppContext = mAppContext;
-		this.mAgentName = mAgentName;
-		this.mUpdateHandler = mUpdateHandler;
+	private AgentBean mAgentBean;
+
+	public AgentKeySelectionManager(Context appContext, String agentName, Handler updateHandler) {
+		mAppContext = appContext;
+		mAgentName = agentName;
+		mUpdateHandler = updateHandler;
+		mAgentBean = new AgentBean();
+		mAgentBean.setPackageName(mAgentName);
 	}
 
     /**
@@ -78,53 +84,43 @@ public class AgentKeySelectionManager {
 
 	}
 
-	public void updateFragment(PublicKeyResponse response) {
-		int resultCode;
-		if (response == null) {
-			resultCode = RESULT_CODE_CANCELED;
-		} else {
-			resultCode = response.getResultCode();
+	protected void onResult(Intent response) {
+		int resultCode = response.getIntExtra(SshAuthenticationApi.EXTRA_RESULT_CODE,
+				SshAuthenticationApi.RESULT_CODE_ERROR);
+		if (resultCode == SshAuthenticationApi.RESULT_CODE_ERROR) {
+			finishError();
 		}
 
+		String keyId = response.getStringExtra(SshAuthenticationApi.EXTRA_KEY_ID);
+		if (keyId != null) {
+			onKeySelected(new KeySelectionResponse(response));
+		} else {
+			onPublicKey(new PublicKeyResponse(response));
+		}
+	}
+
+	private void finish(int resultCode, AgentBean agentBean) {
 		Message message = mUpdateHandler.obtainMessage(resultCode);
-
-		if (resultCode == PublicKeyResponse.RESULT_CODE_SUCCESS) {
+		if (agentBean != null) {
 			Bundle bundle = new Bundle();
-
-			byte[] encodedPublicKey = response.getEncodedPublicKey();
-			int algorithm = response.getKeyAlgorithm();
-
-			// try decoding the encoded key to make sure it can be used for authentication later
-			PublicKey publicKey = getPublicKey(encodedPublicKey, algorithm);
-			if (publicKey == null) {
-				message.what = PublicKeyResponse.RESULT_CODE_ERROR;
-				message.sendToTarget();
-				return;
-			}
-
-			AgentBean agentBean = new AgentBean();
-			agentBean.setKeyIdentifier(response.getKeyID());
-			try {
-				agentBean.setKeyType(translateAlgorithm(algorithm));
-			} catch (NoSuchAlgorithmException e) {
-				e.printStackTrace();
-				message.what = PublicKeyResponse.RESULT_CODE_ERROR;
-				message.sendToTarget();
-				return;
-			}
-			agentBean.setPackageName(mAgentName);
-			agentBean.setDescription(response.getKeyDescription());
-			agentBean.setPublicKey(publicKey.getEncoded());
-
 			bundle.putParcelable(AGENT_BEAN, agentBean);
 			message.setData(bundle);
 		}
-
 		message.sendToTarget();
 	}
 
+	protected void finishCancel() {
+		finish(RESULT_CODE_CANCELED, null);
+	}
+	protected void finishError() {
+		finish(PublicKeyResponse.RESULT_CODE_ERROR, null);
+	}
+	protected void finishSuccess() {
+		finish(PublicKeyResponse.RESULT_CODE_SUCCESS, mAgentBean);
+	}
+
 	private PublicKey getPublicKey(byte[] encodedPublicKey, int algorithmFlag) {
-		PublicKey publicKey = null;
+		PublicKey publicKey;
 		try {
 			publicKey = PubkeyUtils.decodePublic(encodedPublicKey, translateAlgorithm(algorithmFlag));
 		} catch (NoSuchAlgorithmException e) {
@@ -152,16 +148,67 @@ public class AgentKeySelectionManager {
 		}
 	}
 
-	private void getKey(String targetPackage) {
+	private void getKeyId() {
+		Intent request = new KeySelectionRequest().toIntent();
 
-		Intent request = new PublicKeyRequest().toIntent();
-
-		AgentRequest agentRequest = new AgentRequest(request, targetPackage);
+		AgentRequest agentRequest = new AgentRequest(request, mAgentName);
 		agentRequest.setAgentResultHandler(mResultHandler);
 
 		mAgentManager.execute(agentRequest);
-
     }
+
+	private void onKeySelected(KeySelectionResponse response) {
+		int resultCode = response.getResultCode();
+
+		if (resultCode == PublicKeyResponse.RESULT_CODE_SUCCESS) {
+			mAgentBean.setKeyIdentifier(response.getKeyId());
+			mAgentBean.setDescription(response.getKeyDescription());
+			getPublicKey();
+		} else {
+			finishError();
+		}
+	}
+
+    private void getPublicKey() {
+		Intent request = new PublicKeyRequest(mAgentBean.getKeyIdentifier()).toIntent();
+
+		AgentRequest agentRequest = new AgentRequest(request, mAgentName);
+		agentRequest.setAgentResultHandler(mResultHandler);
+
+		mAgentManager.execute(agentRequest);
+    }
+
+	private void onPublicKey(PublicKeyResponse response) {
+		int resultCode = response.getResultCode();
+
+		if (resultCode == PublicKeyResponse.RESULT_CODE_SUCCESS) {
+
+			byte[] encodedPublicKey = response.getEncodedPublicKey();
+			int algorithm = response.getKeyAlgorithm();
+
+			// try decoding the encoded key to make sure it can be used for authentication later
+			PublicKey publicKey = getPublicKey(encodedPublicKey, algorithm);
+			if (publicKey == null) {
+				finishError();
+				return;
+			}
+
+			try {
+				mAgentBean.setKeyType(translateAlgorithm(algorithm));
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+				finishError();
+				return;
+			}
+			mAgentBean.setPublicKey(publicKey.getEncoded());
+
+			finishSuccess();
+		} else {
+			finishError();
+		}
+	}
+
+
 
 	private ResultHandler mResultHandler = new ResultHandler(new WeakReference<>(this));
 
@@ -180,13 +227,18 @@ public class AgentKeySelectionManager {
 			}
 
 			if (msg.what == AgentManager.RESULT_CODE_CANCELED) {
-				agentKeySelectionManager.updateFragment(null);
+				agentKeySelectionManager.finishCancel();
 			} else {
 				Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_RESULT);
-				agentKeySelectionManager.updateFragment(new PublicKeyResponse(result));
+				if (result != null) {
+					agentKeySelectionManager.onResult(result);
+				} else {
+					agentKeySelectionManager.finishError();
+				}
 			}
 
-			agentKeySelectionManager.mAppContext.unbindService(agentKeySelectionManager.mAgentConnection);
+			// TODO: ???
+//			agentKeySelectionManager.mAppContext.unbindService(agentKeySelectionManager.mAgentConnection);
 		}
 	}
 }
