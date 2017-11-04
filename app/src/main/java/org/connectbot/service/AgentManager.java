@@ -20,7 +20,6 @@ package org.connectbot.service;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashMap;
 
 import org.connectbot.util.AgentRequest;
 import org.openintents.ssh.authentication.ISshAuthenticationService;
@@ -46,13 +45,7 @@ public class AgentManager extends Service {
 
 	private WeakReference<Activity> mActivityWeakReference;
 
-	private HashMap<Integer, AgentRequest> mAgentRequests = new HashMap<>();
-
-	private Deque<Integer> mPendingIntentsIdStack = new ArrayDeque<>();
-
-	public void dropRequest(int requestId) {
-		mAgentRequests.remove(requestId);
-	}
+	private Deque<AgentRequest> mPendingIntentsIdStack = new ArrayDeque<>();
 
 	public void setActivity(Activity activity) {
 		mActivityWeakReference = new WeakReference<>(activity);
@@ -72,22 +65,6 @@ public class AgentManager extends Service {
 	}
 
 	public void execute(final AgentRequest agentRequest) {
-		register(agentRequest);
-		connectExecute(agentRequest);
-	}
-
-	private void register(AgentRequest agentRequest) {
-		int requestId = agentRequest.getRequestId();
-		if (requestId == AgentRequest.REQUEST_ID_NONE) {
-			// new AgentRequest, assign id
-			// TODO: something else as key maybe?
-			requestId = agentRequest.hashCode();
-			agentRequest.setRequestId(requestId);
-		}
-		mAgentRequests.put(requestId, agentRequest);
-	}
-
-	public void connectExecute(final AgentRequest agentRequest) {
 		final SshAuthenticationConnection agentConnection = new SshAuthenticationConnection(getApplicationContext(), agentRequest.getTargetPackage());
 
 		agentConnection.connect(new SshAuthenticationConnection.OnBound() {
@@ -111,46 +88,28 @@ public class AgentManager extends Service {
 		agentApi.executeApiAsync(agentRequest.getRequest(), new SshAuthenticationApi.ISshAgentCallback() {
 			@Override
 			public void onReturn(Intent intent) {
-				checkResponse(intent, agentRequest);
+				processResponse(intent, agentRequest);
 			}
 		});
 
 	}
 
-	private void checkResponse(Intent response, AgentRequest agentRequest) {
+	private void processResponse(Intent response, AgentRequest agentRequest) {
 		int statusCode = response.getIntExtra(SshAuthenticationApi.EXTRA_RESULT_CODE, SshAuthenticationApi.RESULT_CODE_ERROR);
 		switch (statusCode) {
 		case SshAuthenticationApi.RESULT_CODE_SUCCESS:
 		case SshAuthenticationApi.RESULT_CODE_ERROR:
-			processResult(response, agentRequest);
+			sendResult(response, agentRequest);
 			return;
 		case SshAuthenticationApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
-			processPendingIntent(response, agentRequest);
+			executePendingIntent(response, agentRequest);
 		}
 	}
 
-	private void processPendingIntent(Intent response, AgentRequest agentRequest) {
-		// execute PendingIntent
-		int requestId = agentRequest.getRequestId();
-		PendingIntent pendingIntent = response.getParcelableExtra(SshAuthenticationApi.EXTRA_PENDING_INTENT);
-		try {
-			Log.d(getClass().toString(), "====>>>> tid: " + android.os.Process.myTid());
-
-			// push request id on to a queue so we know which req to remove when cancelled
-			// TODO: this does not work as intended, investigate
-			mPendingIntentsIdStack.push(requestId);
-
-			mActivityWeakReference.get().startIntentSenderForResult(pendingIntent.getIntentSender(), AgentRequest.AGENT_REQUEST_CODE, null, 0, 0, 0);
-		} catch (IntentSender.SendIntentException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void processResult(Intent result, AgentRequest agentRequest) {
-		int requestId = AgentRequest.REQUEST_ID_NONE;
+	private void sendResult(Intent result, AgentRequest agentRequest) {
 		if (result != null) { // return result to origin
-			requestId = agentRequest.getRequestId();
-			Handler resultHandler = mAgentRequests.get(requestId).getAgentResultHandler();
+			Handler resultHandler = agentRequest.getAgentResultHandler();
+
 			Bundle bundle = new Bundle();
 			bundle.putParcelable(AgentRequest.AGENT_REQUEST_RESULT, result);
 
@@ -161,21 +120,35 @@ public class AgentManager extends Service {
 		}
 	}
 
+	private void executePendingIntent(Intent response, AgentRequest agentRequest) {
+		PendingIntent pendingIntent = response.getParcelableExtra(SshAuthenticationApi.EXTRA_PENDING_INTENT);
+		Activity activity = mActivityWeakReference.get();
+		// push request onto a stack so we know which request to drop when cancelled
+		mPendingIntentsIdStack.push(agentRequest);
+		try {
+			activity.startIntentSenderForResult(pendingIntent.getIntentSender(),
+					AgentRequest.AGENT_REQUEST_CODE,
+					null, 0, 0, 0);
+		} catch (IntentSender.SendIntentException e) {
+			e.printStackTrace();
+			mPendingIntentsIdStack.pop();
+		}
+	}
+
 
 	public void processPendingIntentResult(int requestCode, int resultCode, Intent result) {
-		int requestId = mPendingIntentsIdStack.pop();
+		// get the request belonging to this result
+		AgentRequest agentRequest = mPendingIntentsIdStack.pop();
 		if (resultCode == Activity.RESULT_CANCELED) {
-			mAgentRequests.get(requestId).getAgentResultHandler().sendEmptyMessage(RESULT_CODE_CANCELED);
-			dropRequest(requestId);
+			agentRequest.getAgentResultHandler().sendEmptyMessage(RESULT_CODE_CANCELED);
 			return;
 		}
-		AgentRequest agentRequest = mAgentRequests.get(requestId);
 
 		if (result != null) {
 			agentRequest.setRequest(result);
 
 			// execute received Intent again for result
-			connectExecute(agentRequest);
+			execute(agentRequest);
 		}
 	}
 

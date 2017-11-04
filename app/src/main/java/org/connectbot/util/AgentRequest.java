@@ -37,8 +37,6 @@ public class AgentRequest {
 
 	private Intent mRequest;
 
-	private int mRequestId = REQUEST_ID_NONE;
-
 	public AgentRequest(Intent request, String targetPackage) {
 		mRequest = request;
 		mTargetPackage = targetPackage;
@@ -62,14 +60,5 @@ public class AgentRequest {
 
 	public void setRequest(Intent request) {
 		this.mRequest = request;
-	}
-
-	public int getRequestId() {
-		return mRequestId;
-	}
-
-	public void setRequestId(int requestId) {
-		mRequestId = requestId;
-		mRequest.putExtra(REQUEST_ID, requestId);
 	}
 }
