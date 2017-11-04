@@ -23,15 +23,16 @@ import java.util.Deque;
 import java.util.HashMap;
 
 import org.connectbot.util.AgentRequest;
+import org.openintents.ssh.authentication.ISshAuthenticationService;
+import org.openintents.ssh.authentication.SshAuthenticationApi;
+import org.openintents.ssh.authentication.SshAuthenticationConnection;
 
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.IntentSender;
-import android.os.AsyncTask;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -55,7 +56,6 @@ public class AgentManager extends Service {
 
 	public void setActivity(Activity activity) {
 		mActivityWeakReference = new WeakReference<>(activity);
-		mAgentManagerTaskResultHandler = new AgentResultHandler(mActivityWeakReference, new WeakReference<>(this));
 	}
 
 	public class AgentBinder extends Binder {
@@ -73,19 +73,7 @@ public class AgentManager extends Service {
 
 	public void execute(final AgentRequest agentRequest) {
 		register(agentRequest);
-		executeInternal(agentRequest);
-	}
-
-	public void executeInternal(final AgentRequest agentRequest) {
-		AgentManagerTask agentManagerTask = new AgentManagerTask(getApplicationContext(), mAgentManagerTaskResultHandler);
-		agentManagerTask.execute(agentRequest);
-
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			agentManagerTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, agentRequest);
-		} else {
-			agentManagerTask.execute(agentRequest);
-		}
-
+		connectExecute(agentRequest);
 	}
 
 	private void register(AgentRequest agentRequest) {
@@ -98,6 +86,81 @@ public class AgentManager extends Service {
 		}
 		mAgentRequests.put(requestId, agentRequest);
 	}
+
+	public void connectExecute(final AgentRequest agentRequest) {
+		final SshAuthenticationConnection agentConnection = new SshAuthenticationConnection(getApplicationContext(), agentRequest.getTargetPackage());
+
+		agentConnection.connect(new SshAuthenticationConnection.OnBound() {
+			@Override
+			public void onBound(ISshAuthenticationService sshAgent) {
+				executeInternal(sshAgent, agentRequest);
+				agentConnection.disconnect();
+			}
+
+			@Override
+			public void onError() {
+			}
+		});
+	}
+
+	private void executeInternal(ISshAuthenticationService sshAgent, final AgentRequest agentRequest) {
+		Log.d(getClass().toString(), "====>>>> executing request in tid: " + android.os.Process.myTid());
+
+		SshAuthenticationApi agentApi = new SshAuthenticationApi(getApplicationContext(), sshAgent);
+
+		agentApi.executeApiAsync(agentRequest.getRequest(), new SshAuthenticationApi.ISshAgentCallback() {
+			@Override
+			public void onReturn(Intent intent) {
+				checkResponse(intent, agentRequest);
+			}
+		});
+
+	}
+
+	private void checkResponse(Intent response, AgentRequest agentRequest) {
+		int statusCode = response.getIntExtra(SshAuthenticationApi.EXTRA_RESULT_CODE, SshAuthenticationApi.RESULT_CODE_ERROR);
+		switch (statusCode) {
+		case SshAuthenticationApi.RESULT_CODE_SUCCESS:
+		case SshAuthenticationApi.RESULT_CODE_ERROR:
+			processResult(response, agentRequest);
+			return;
+		case SshAuthenticationApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
+			processPendingIntent(response, agentRequest);
+		}
+	}
+
+	private void processPendingIntent(Intent response, AgentRequest agentRequest) {
+		// execute PendingIntent
+		int requestId = agentRequest.getRequestId();
+		PendingIntent pendingIntent = response.getParcelableExtra(SshAuthenticationApi.EXTRA_PENDING_INTENT);
+		try {
+			Log.d(getClass().toString(), "====>>>> tid: " + android.os.Process.myTid());
+
+			// push request id on to a queue so we know which req to remove when cancelled
+			// TODO: this does not work as intended, investigate
+			mPendingIntentsIdStack.push(requestId);
+
+			mActivityWeakReference.get().startIntentSenderForResult(pendingIntent.getIntentSender(), AgentRequest.AGENT_REQUEST_CODE, null, 0, 0, 0);
+		} catch (IntentSender.SendIntentException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void processResult(Intent result, AgentRequest agentRequest) {
+		int requestId = AgentRequest.REQUEST_ID_NONE;
+		if (result != null) { // return result to origin
+			requestId = agentRequest.getRequestId();
+			Handler resultHandler = mAgentRequests.get(requestId).getAgentResultHandler();
+			Bundle bundle = new Bundle();
+			bundle.putParcelable(AgentRequest.AGENT_REQUEST_RESULT, result);
+
+			Message message = resultHandler.obtainMessage();
+			message.setData(bundle);
+
+			message.sendToTarget();
+		}
+	}
+
 
 	public void processPendingIntentResult(int requestCode, int resultCode, Intent result) {
 		int requestId = mPendingIntentsIdStack.pop();
@@ -112,59 +175,9 @@ public class AgentManager extends Service {
 			agentRequest.setRequest(result);
 
 			// execute received Intent again for result
-			executeInternal(agentRequest);
+			connectExecute(agentRequest);
 		}
 	}
 
-	private AgentResultHandler mAgentManagerTaskResultHandler = new AgentResultHandler(mActivityWeakReference, new WeakReference<>(this));
-
-	public static class AgentResultHandler extends Handler {
-		private WeakReference<Activity> activityWeakReference;
-		private WeakReference<AgentManager> agentManagerWeakReference;
-
-		public AgentResultHandler(WeakReference<Activity> activityWeakReference, WeakReference<AgentManager> agentManagerWeakReference) {
-			this.activityWeakReference = activityWeakReference;
-			this.agentManagerWeakReference = agentManagerWeakReference;
-		}
-
-		@Override
-		public void handleMessage(Message msg) {
-			Activity activity = activityWeakReference.get();
-			AgentManager agentManager = agentManagerWeakReference.get();
-			if (activity == null || agentManager == null) {
-				return;
-			}
-
-			Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_RESULT);
-			int requestId = AgentRequest.REQUEST_ID_NONE;
-			if (result != null) { // return result to origin
-				requestId = msg.getData().getInt(AgentRequest.REQUEST_ID, AgentRequest.REQUEST_ID_NONE);
-				Handler resultHandler = agentManager.mAgentRequests.get(requestId).getAgentResultHandler();
-				Bundle bundle = new Bundle();
-				bundle.putParcelable(AgentRequest.AGENT_REQUEST_RESULT, result);
-
-				Message message = resultHandler.obtainMessage();
-				message.setData(bundle);
-
-				message.sendToTarget();
-				return;
-			}
-
-			// execute PendingIntent
-			requestId = msg.getData().getInt(AgentRequest.REQUEST_ID);
-			PendingIntent pendingIntent = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_PENDINGINTENT);
-			try {
-				Log.d(getClass().toString(), "====>>>> tid: " + android.os.Process.myTid());
-
-				// push request id on to a queue so we know which req to remove when cancelled
-				// TODO: this does not work as intended, investigate
-				agentManager.mPendingIntentsIdStack.push(requestId);
-
-				activity.startIntentSenderForResult(pendingIntent.getIntentSender(), AgentRequest.AGENT_REQUEST_CODE, null, 0, 0, 0);
-			} catch (IntentSender.SendIntentException e) {
-				e.printStackTrace();
-			}
-		}
-}
 }
 
