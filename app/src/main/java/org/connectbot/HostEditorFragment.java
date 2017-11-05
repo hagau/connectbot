@@ -37,6 +37,7 @@ import org.openintents.ssh.authentication.util.SshAuthenticationApiUtils;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.pm.ResolveInfo;
 import android.content.res.TypedArray;
 import android.net.Uri;
 import android.os.Bundle;
@@ -349,7 +350,7 @@ public class HostEditorFragment extends Fragment {
 								mHost.setPubkeyId(pubKeyId);
 								if (pubKeyId == HostDatabase.PUBKEYID_AGENT) {
 									// Pick a key from an agent
-									selectKey();
+									selectKeyFromAgent();
 								} else {
 									mPubkeyText.setText(mPubkeyNames.get(i));
 									// an other option that is not the agent option was selected
@@ -520,10 +521,6 @@ public class HostEditorFragment extends Fragment {
 				+ agentBean.getDescription();
 	}
 
-	private void selectKey() {
-		final String agentName = selectAgent();
-		Log.d(getClass().toString(), "====>>>> selectKey tid: "+ android.os.Process.myTid());
-
 //		Thread thread = new Thread(new Runnable() {
 //			@Override
 //			public void run() {
@@ -555,26 +552,43 @@ public class HostEditorFragment extends Fragment {
 //			}
 //		}.execute(new AgentUpdateParam(getActivity().getApplicationContext(), agentName, updateAgentHandler));
 
-		AgentKeySelectionManager keySelectionManager = new AgentKeySelectionManager(getActivity().getApplicationContext(), agentName, updateAgentHandler);
-		keySelectionManager.selectKeyFromAgent();
 
-	}
 
 	private UpdateAgentHandler updateAgentHandler = new UpdateAgentHandler(new WeakReference<>(this));
 
-	private String selectAgent() {
-		// TODO: implement GUI for selecting agent, pick last entry for now
-		List<String> providers = SshAuthenticationApiUtils.getAgentProviders(getContext());
-		if (providers.isEmpty()) {
+	private void selectKeyFromAgent() {
+		// select an agent first
+		selectAgent();
+		Log.d(getClass().toString(), "====>>>> selectKeyFromAgent tid: " + android.os.Process.myTid());
+	}
+
+	private void selectAgent() {
+		List<ResolveInfo> providerInfo = SshAuthenticationApiUtils.getAgentProviderInfo(getContext());
+		if (providerInfo.isEmpty()) {
 			Toast.makeText(getContext(), R.string.No_SSH_Agents_installed, Toast.LENGTH_SHORT).show();
+			return;
 		}
-		String selectedAgent = null;
-		for (String provider : providers) {
-			Log.d(getClass().toString(), "packageName "+ provider);
-			Log.d(getClass().toString(), "className "+ SshAuthenticationApi.SERVICE_INTENT);
-			selectedAgent = provider;
+		List<String> providerPackage = SshAuthenticationApiUtils.getAgentProviderPackageNames(providerInfo);
+		if (providerInfo.size() == 1) {
+			onAgentSelected(providerPackage.get(0));
 		}
-		return selectedAgent;
+		List<String> providerLabel = SshAuthenticationApiUtils.getAgentProviderLabel(getContext(), providerInfo);
+
+		AgentSelectionPresenter presenter = new AgentSelectionPresenter(providerPackage, providerLabel, this);
+		presenter.show();
+	}
+
+	public void onAgentSelected(String agentName) {
+		if (agentName == null) {
+			return;
+		}
+
+		selectKey(agentName);
+	}
+
+	private void selectKey(String agentName) {
+		AgentKeySelectionManager keySelectionManager = new AgentKeySelectionManager(getActivity().getApplicationContext(), agentName, updateAgentHandler);
+		keySelectionManager.selectKeyFromAgent();
 	}
 
 	/**
