@@ -32,7 +32,6 @@ import org.connectbot.util.AgentDatabase;
 import org.connectbot.util.AgentKeySelectionManager;
 import org.connectbot.util.HostDatabase;
 import org.connectbot.views.CheckableMenuItem;
-import org.openintents.ssh.authentication.SshAuthenticationApi;
 import org.openintents.ssh.authentication.util.SshAuthenticationApiUtils;
 
 import android.content.ContentValues;
@@ -41,8 +40,6 @@ import android.content.pm.ResolveInfo;
 import android.content.res.TypedArray;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.os.Parcelable;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
@@ -60,8 +57,6 @@ import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import static org.connectbot.util.AgentKeySelectionManager.AGENT_BEAN;
 
 public class HostEditorFragment extends Fragment {
 
@@ -554,8 +549,6 @@ public class HostEditorFragment extends Fragment {
 
 
 
-	private UpdateAgentHandler updateAgentHandler = new UpdateAgentHandler(new WeakReference<>(this));
-
 	private void selectKeyFromAgent() {
 		// select an agent first
 		selectAgent();
@@ -580,6 +573,7 @@ public class HostEditorFragment extends Fragment {
 
 	public void onAgentSelected(String agentName) {
 		if (agentName == null) {
+			Toast.makeText(getContext(), R.string.Agent_selection_cancelled, Toast.LENGTH_SHORT).show();
 			return;
 		}
 
@@ -587,8 +581,26 @@ public class HostEditorFragment extends Fragment {
 	}
 
 	private void selectKey(String agentName) {
-		AgentKeySelectionManager keySelectionManager = new AgentKeySelectionManager(getActivity().getApplicationContext(), agentName, updateAgentHandler);
+		AgentKeySelectionManager.AgentKeySelectionCallback resultCallback = new AgentKeySelectionManager.AgentKeySelectionCallback() {
+			@Override
+			public void onKeySelectionResult(int resultCode, AgentBean agentBean) {
+				onKeySelected(resultCode, agentBean);
+			}
+		};
+		AgentKeySelectionManager keySelectionManager = new AgentKeySelectionManager(getActivity().getApplicationContext(), agentName, resultCallback);
 		keySelectionManager.selectKeyFromAgent();
+	}
+
+	private void onKeySelected(int resultCode, AgentBean agentBean) {
+		if (resultCode == AgentKeySelectionManager.RESULT_CODE_SUCCESS) {
+			mListener.onAgentConfigured(agentBean);
+			mPubkeyText.setText(getAgentKeyDescription(agentBean));
+			Toast.makeText(getContext(), R.string.Agent_selection_successful, Toast.LENGTH_SHORT).show();
+		} else if (resultCode == AgentKeySelectionManager.RESULT_CODE_CANCELED) {
+			Toast.makeText(getContext(), R.string.Agent_selection_cancelled, Toast.LENGTH_SHORT).show();
+		} else {
+			Toast.makeText(getContext(), R.string.Agent_selection_failed, Toast.LENGTH_SHORT).show();
+		}
 	}
 
 	/**
@@ -869,36 +881,6 @@ public class HostEditorFragment extends Fragment {
 			return HostDatabase.FIELD_HOST_USERNAME.equals(fieldType) ||
 					HostDatabase.FIELD_HOST_HOSTNAME.equals(fieldType) ||
 					HostDatabase.FIELD_HOST_PORT.equals(fieldType);
-		}
-	}
-
-	private static class UpdateAgentHandler extends Handler {
-		private WeakReference<HostEditorFragment> fragmentWeakReference;
-
-		public UpdateAgentHandler(WeakReference<HostEditorFragment> fragmentWeakReference) {
-			this.fragmentWeakReference = fragmentWeakReference;
-		}
-
-		@Override
-		public void handleMessage(Message msg) {
-			HostEditorFragment hostEditorFragment = fragmentWeakReference.get();
-			if (hostEditorFragment == null) {
-				return;
-			}
-			Context context = hostEditorFragment.getContext();
-			int resultCode = msg.what;
-
-			if (resultCode == AgentKeySelectionManager.RESULT_CODE_SUCCESS) {
-				AgentBean agentBean = msg.getData().getParcelable(AGENT_BEAN);
-
-				hostEditorFragment.mListener.onAgentConfigured(agentBean);
-				hostEditorFragment.mPubkeyText.setText(hostEditorFragment.getAgentKeyDescription(agentBean));
-				Toast.makeText(context, R.string.Agent_selection_successful, Toast.LENGTH_SHORT).show();
-			} else if (resultCode == AgentKeySelectionManager.RESULT_CODE_CANCELED) {
-				Toast.makeText(context, R.string.Agent_selection_cancelled, Toast.LENGTH_SHORT).show();
-			} else {
-				Toast.makeText(context, R.string.Agent_selection_failed, Toast.LENGTH_SHORT).show();
-			}
 		}
 	}
 }

@@ -34,7 +34,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -42,10 +41,13 @@ import android.util.Log;
 
 
 public class AgentKeySelectionManager {
-	public static final String AGENT_BEAN = "agent_bean";
 	public static final int RESULT_CODE_ERROR = SshAuthenticationApi.RESULT_CODE_ERROR;
 	public static final int RESULT_CODE_SUCCESS = SshAuthenticationApi.RESULT_CODE_SUCCESS;
 	public static final int RESULT_CODE_CANCELED = AgentManager.RESULT_CODE_CANCELED;
+
+	public interface AgentKeySelectionCallback {
+		void onKeySelectionResult(int resultCode, AgentBean agentBean);
+	}
 
 	private AgentManager mAgentManager = null;
 
@@ -62,14 +64,16 @@ public class AgentKeySelectionManager {
 
 	private Context mAppContext;
 	private String mAgentName;
-	private Handler mUpdateHandler;
+
+	private AgentKeySelectionCallback mResultCallback;
 
 	private AgentBean mAgentBean;
 
-	public AgentKeySelectionManager(Context appContext, String agentName, Handler updateHandler) {
+	public AgentKeySelectionManager(Context appContext, String agentName, AgentKeySelectionCallback resultCallback) {
 		mAppContext = appContext;
 		mAgentName = agentName;
-		mUpdateHandler = updateHandler;
+		mResultCallback = resultCallback;
+
 		mAgentBean = new AgentBean();
 		mAgentBean.setPackageName(mAgentName);
 	}
@@ -100,13 +104,9 @@ public class AgentKeySelectionManager {
 	}
 
 	private void finish(int resultCode, AgentBean agentBean) {
-		Message message = mUpdateHandler.obtainMessage(resultCode);
-		if (agentBean != null) {
-			Bundle bundle = new Bundle();
-			bundle.putParcelable(AGENT_BEAN, agentBean);
-			message.setData(bundle);
-		}
-		message.sendToTarget();
+		mResultCallback.onKeySelectionResult(resultCode, agentBean);
+
+		mAppContext.unbindService(mAgentConnection);
 	}
 
 	protected void finishCancel() {
@@ -236,9 +236,6 @@ public class AgentKeySelectionManager {
 					agentKeySelectionManager.finishError();
 				}
 			}
-
-			// TODO: ???
-//			agentKeySelectionManager.mAppContext.unbindService(agentKeySelectionManager.mAgentConnection);
 		}
 	}
 }
