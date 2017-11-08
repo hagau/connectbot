@@ -678,10 +678,13 @@
 	<string name="key_attribute_encrypted">(encrypted)</string>
 	<string name="selected_Agent_res">Agent:</string>
 	<string name="selected_Agent_key">Key:</string>
-	<string name="Agent_selection_failed">Agent selection failed</string>
-	<string name="Agent_selection_cancelled">Agent selection cancelled</string>
-	<string name="Agent_selection_successful">Agent selection successful</string>
 	<string name="No_SSH_Agents_installed">No SSH-Agents installed</string>
+	<string name="Agent_selection_cancelled">Agent selection cancelled</string>
+	<string name="Agent_key_selection_successful">Agent key selection successful</string>
+	<string name="Agent_key_selection_cancelled">Agent key selection cancelled</string>
+	<string name="Agent_key_selection_failed">Agent key selection failed</string>
+	<string name="select_agent_description">These are the installed agents. Please select one:</string>
+	<string name="select_agent">Select Agent</string>
 	<string name="Problem_requested_URI">Problem while trying to create new requested bridge from URI</string>
 	<string name="Unknown">Unknown</string>
 	<string name="Attempting_to_authenticate">Attempting to authenticate with an ssh-agent</string>

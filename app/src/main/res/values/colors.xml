@@ -23,7 +23,7 @@
 	<color name="key_separator">#00000000</color>
 	<color name="keyboard_background">#55b0b0f0</color>
 
-	<color name="primary">#03A9F4</color>
+	<color name="primary">#03a9f4</color>
 	<color name="dark_primary">#0288D1</color>
 
 	<color name="accent">#40C4FF</color>

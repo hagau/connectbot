@@ -277,10 +277,11 @@
   <string name="key_attribute_encrypted">(verschlüsselt)</string>
   <string name="selected_Agent_res">Agent:</string>
   <string name="selected_Agent_Key">Schlüssel:</string>
-  <string name="Agent_selection_failed">Agent-Auswahl fehlgeschlagen</string>
-  <string name="Agent_selection_cancelled">Agent-Auswahl abgebrochen</string>
-  <string name="Agent_selection_successful">Agent-Auswahl erfolgreich</string>
   <string name="No_SSH_Agents_installed">Kein SSH-Agent installiert</string>
+  <string name="Agent_selection_cancelled">Agent-Auswahl abgebrochen</string>
+  <string name="Agent_key_selection_successful">Agent-Schlüssel-Auswahl erfolgreich</string>
+  <string name="Agent_key_selection_cancelled">Agent-Schlüssel-Auswahl abgebrochen</string>
+  <string name="Agent_key_selection_failed">Agent-Schlüssel-Auswahl fehlgeschlagen</string>
   <string name="Problem_requested_URI">Problem while trying to create new requested bridge from URI</string>
   <string name="Unknown">Unknown</string>
   <string name="Attempting_to_authenticate">Versuche mit SSH-Agent zu authentisieren</string>

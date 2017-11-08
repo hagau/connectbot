@@ -567,8 +567,8 @@ public class HostEditorFragment extends Fragment {
 		}
 		List<String> providerLabel = SshAuthenticationApiUtils.getAgentProviderLabel(getContext(), providerInfo);
 
-		AgentSelectionPresenter presenter = new AgentSelectionPresenter(providerPackage, providerLabel, this);
-		presenter.show();
+		AgentSelectionDialog agentSelectionDialog = AgentSelectionDialog.newInstance(providerPackage, providerLabel);
+		agentSelectionDialog.show(getFragmentManager(), "agentSelectionDialog");
 	}
 
 	public void onAgentSelected(String agentName) {
@@ -595,11 +595,11 @@ public class HostEditorFragment extends Fragment {
 		if (resultCode == AgentKeySelectionManager.RESULT_CODE_SUCCESS) {
 			mListener.onAgentConfigured(agentBean);
 			mPubkeyText.setText(getAgentKeyDescription(agentBean));
-			Toast.makeText(getContext(), R.string.Agent_selection_successful, Toast.LENGTH_SHORT).show();
+			Toast.makeText(getContext(), R.string.Agent_key_selection_successful, Toast.LENGTH_SHORT).show();
 		} else if (resultCode == AgentKeySelectionManager.RESULT_CODE_CANCELED) {
-			Toast.makeText(getContext(), R.string.Agent_selection_cancelled, Toast.LENGTH_SHORT).show();
+			Toast.makeText(getContext(), R.string.Agent_key_selection_cancelled, Toast.LENGTH_SHORT).show();
 		} else {
-			Toast.makeText(getContext(), R.string.Agent_selection_failed, Toast.LENGTH_SHORT).show();
+			Toast.makeText(getContext(), R.string.Agent_key_selection_failed, Toast.LENGTH_SHORT).show();
 		}
 	}
 

@@ -18,9 +18,16 @@
 			android:id="@+id/textView"
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
-			android:text="Select Agent"
 			android:paddingBottom="24dp"
+			android:text="@string/select_agent"
 			android:textAppearance="?android:textAppearanceLarge"/>
+
+		<TextView
+			android:id="@+id/textViewInfo"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:paddingBottom="24dp"
+			android:text="@string/select_agent_description"/>
 
 		<android.support.v7.widget.RecyclerView
 			android:id="@+id/agent_recycler"
