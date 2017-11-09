@@ -41,6 +41,8 @@ import android.util.Log;
 
 public class AgentManager extends Service {
 
+	public static int AGENT_REQUEST_CODE = 1729;
+
 	public static final int RESULT_CODE_CANCELED = -1;
 
 	private WeakReference<Activity> mActivityWeakReference;
@@ -126,8 +128,7 @@ public class AgentManager extends Service {
 		// push request onto a stack so we know which request to drop when cancelled
 		mPendingIntentsIdStack.push(agentRequest);
 		try {
-			activity.startIntentSenderForResult(pendingIntent.getIntentSender(),
-					AgentRequest.AGENT_REQUEST_CODE,
+			activity.startIntentSenderForResult(pendingIntent.getIntentSender(), AGENT_REQUEST_CODE,
 					null, 0, 0, 0);
 		} catch (IntentSender.SendIntentException e) {
 			e.printStackTrace();
@@ -136,7 +137,7 @@ public class AgentManager extends Service {
 	}
 
 
-	public void processPendingIntentResult(int requestCode, int resultCode, Intent result) {
+	public void processPendingIntentResult(int resultCode, Intent result) {
 		// get the request belonging to this result
 		AgentRequest agentRequest = mPendingIntentsIdStack.pop();
 		if (resultCode == Activity.RESULT_CANCELED) {

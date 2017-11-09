@@ -28,6 +28,7 @@ import org.connectbot.service.PromptHelper;
 import org.connectbot.service.TerminalBridge;
 import org.connectbot.service.TerminalKeyListener;
 import org.connectbot.service.TerminalManager;
+import org.connectbot.util.AgentRequest;
 import org.connectbot.util.PreferenceConstants;
 import org.connectbot.util.TerminalViewPager;
 
@@ -1398,7 +1399,9 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
         super.onActivityResult(requestCode, resultCode, data);
 		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
 
-		agentManager.processPendingIntentResult(requestCode, resultCode, data);
+		if (requestCode == AgentManager.AGENT_REQUEST_CODE) {
+			agentManager.processPendingIntentResult(resultCode, data);
+		}
     }
 
 }

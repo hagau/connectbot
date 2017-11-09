@@ -63,15 +63,15 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 	private boolean mIsCreating;
 	private MenuItem mSaveHostButton;
 
-	protected AgentManager agentManager = null;
+	protected AgentManager mAgentManager = null;
 	private ServiceConnection agentConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
-			agentManager = ((AgentManager.AgentBinder) service).getService();
-			agentManager.setActivity(EditHostActivity.this);
+			mAgentManager = ((AgentManager.AgentBinder) service).getService();
+			mAgentManager.setActivity(EditHostActivity.this);
 		}
 
 		public void onServiceDisconnected(ComponentName className) {
-			agentManager = null;
+			mAgentManager = null;
 		}
 	};
 
@@ -363,7 +363,9 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
         super.onActivityResult(requestCode, resultCode, data);
 		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
 
-		agentManager.processPendingIntentResult(requestCode, resultCode, data);
+		if (requestCode == AgentManager.AGENT_REQUEST_CODE) {
+			mAgentManager.processPendingIntentResult(resultCode, data);
+		}
     }
 
 }
