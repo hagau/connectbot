@@ -24,6 +24,8 @@ public class AgentRequest {
 
 	public static String AGENT_REQUEST_RESULT = "result";
 
+	public static int AGENT_REQUEST_CODE = 1729;
+
 	private Handler mAgentResultHandler;
 
 	private String mTargetPackage;

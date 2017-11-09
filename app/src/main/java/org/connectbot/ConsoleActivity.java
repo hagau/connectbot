@@ -198,18 +198,6 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 		}
 	};
 
-	protected AgentManager agentManager = null;
-	private ServiceConnection agentConnection = new ServiceConnection() {
-		public void onServiceConnected(ComponentName className, IBinder service) {
-			agentManager = ((AgentManager.AgentBinder) service).getService();
-			agentManager.setActivity(ConsoleActivity.this);
-		}
-
-		public void onServiceDisconnected(ComponentName className) {
-			agentManager = null;
-		}
-	};
-
 	protected Handler promptHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
@@ -745,9 +733,6 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 					}
 				}
 			});
-
-		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
-		bindService(new Intent(this, AgentManager.class), agentConnection, Context.BIND_AUTO_CREATE);
 	}
 
 
@@ -1115,14 +1100,6 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 	}
 
 	@Override
-	public void onDestroy() {
-		super.onDestroy();
-
-		// TODO: wrong, service needs to always run for possible background reconnects
-		unbindService(agentConnection);
-	}
-
-	@Override
 	public void onSaveInstanceState(Bundle savedInstanceState) {
 		// Maintain selected host if connected.
 		TerminalView currentTerminalView = adapter.getCurrentTerminalView();
@@ -1393,15 +1370,4 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 			return (TerminalView) currentView.findViewById(R.id.terminal_view);
 		}
 	}
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
-
-		if (requestCode == AgentManager.AGENT_REQUEST_CODE) {
-			agentManager.processPendingIntentResult(resultCode, data);
-		}
-    }
-
 }

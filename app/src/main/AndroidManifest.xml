@@ -182,6 +182,9 @@
 			</intent-filter>
 		</activity>
 
+		<activity android:name=".AgentActivity"
+			android:theme="@style/Theme.AppCompat.Transparent"/>
+
 		<meta-data
 			android:name="com.google.android.backup.api_key"
 			android:value="AEdPqrEAAAAIDlFz9nSUr2g0gSytW0t2cNnYAGHDkptlVohsBA"/>

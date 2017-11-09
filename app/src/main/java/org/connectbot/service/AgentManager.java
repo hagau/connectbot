@@ -17,10 +17,10 @@
 
 package org.connectbot.service;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
+import org.connectbot.AgentActivity;
 import org.connectbot.util.AgentRequest;
 import org.openintents.ssh.authentication.ISshAuthenticationService;
 import org.openintents.ssh.authentication.SshAuthenticationApi;
@@ -30,7 +30,6 @@ import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
@@ -45,13 +44,9 @@ public class AgentManager extends Service {
 
 	public static final int RESULT_CODE_CANCELED = -1;
 
-	private WeakReference<Activity> mActivityWeakReference;
+	public static final String AGENT_PENDING_INTENT = "pendingIntent";
 
-	private Deque<AgentRequest> mPendingIntentsIdStack = new ArrayDeque<>();
-
-	public void setActivity(Activity activity) {
-		mActivityWeakReference = new WeakReference<>(activity);
-	}
+	private Deque<AgentRequest> mPendingIntentsStack = new ArrayDeque<>();
 
 	public class AgentBinder extends Binder {
 		public AgentManager getService() {
@@ -124,22 +119,23 @@ public class AgentManager extends Service {
 
 	private void executePendingIntent(Intent response, AgentRequest agentRequest) {
 		PendingIntent pendingIntent = response.getParcelableExtra(SshAuthenticationApi.EXTRA_PENDING_INTENT);
-		Activity activity = mActivityWeakReference.get();
+
 		// push request onto a stack so we know which request to drop when cancelled
-		mPendingIntentsIdStack.push(agentRequest);
-		try {
-			activity.startIntentSenderForResult(pendingIntent.getIntentSender(), AGENT_REQUEST_CODE,
-					null, 0, 0, 0);
-		} catch (IntentSender.SendIntentException e) {
-			e.printStackTrace();
-			mPendingIntentsIdStack.pop();
-		}
+		mPendingIntentsStack.push(agentRequest);
+
+		Intent intent = new Intent(this, AgentActivity.class);
+		intent.putExtra(AGENT_PENDING_INTENT, pendingIntent);
+		startActivity(intent);
+
 	}
 
+	public void cancelPendingIntent() {
+			mPendingIntentsStack.pop();
+	}
 
 	public void processPendingIntentResult(int resultCode, Intent result) {
 		// get the request belonging to this result
-		AgentRequest agentRequest = mPendingIntentsIdStack.pop();
+		AgentRequest agentRequest = mPendingIntentsStack.pop();
 		if (resultCode == Activity.RESULT_CANCELED) {
 			agentRequest.getAgentResultHandler().sendEmptyMessage(RESULT_CODE_CANCELED);
 			return;
