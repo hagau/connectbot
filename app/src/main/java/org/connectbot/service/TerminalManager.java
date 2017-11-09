@@ -510,6 +510,7 @@ public class TerminalManager extends Service implements BridgeDisconnectedListen
 	private void keepServiceAlive() {
 		stopIdleTimer();
 		startService(new Intent(this, TerminalManager.class));
+		startService(new Intent(this, AgentManager.class));
 	}
 
 	@Override
@@ -551,6 +552,7 @@ public class TerminalManager extends Service implements BridgeDisconnectedListen
 		@Override
 		public void run() {
 			Log.d(TAG, String.format("Stopping service after timeout of ~%d seconds", IDLE_TIMEOUT / 1000));
+			stopService(new Intent(TerminalManager.this, AgentManager.class));
 			TerminalManager.this.stopNow();
 		}
 	}

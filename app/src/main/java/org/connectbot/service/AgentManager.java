@@ -61,6 +61,16 @@ public class AgentManager extends Service {
 		return mAgentBinder;
 	}
 
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		/*
+		 * The lifecycle of this service is bound to the lifecycle  of TerminalManager, since
+		 * authentication might need to occur in the background if connectivity is temporarily lost,
+		 * so this service needs to run as long as there are TerminalBridges active in TerminalManager
+		 */
+		return START_STICKY;
+	}
+
 	public void execute(final AgentRequest agentRequest) {
 		final SshAuthenticationConnection agentConnection = new SshAuthenticationConnection(getApplicationContext(), agentRequest.getTargetPackage());
 
