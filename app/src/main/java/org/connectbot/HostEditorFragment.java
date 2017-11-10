@@ -522,16 +522,16 @@ public class HostEditorFragment extends Fragment {
 	}
 
 	private void selectAgent() {
-		List<ResolveInfo> providerInfo = SshAuthenticationApiUtils.getAgentProviderInfo(getContext());
+		List<ResolveInfo> providerInfo = SshAuthenticationApiUtils.getAuthenticationProviderInfo(getContext());
 		if (providerInfo.isEmpty()) {
 			Toast.makeText(getContext(), R.string.No_SSH_Agents_installed, Toast.LENGTH_SHORT).show();
 			return;
 		}
-		List<String> providerPackage = SshAuthenticationApiUtils.getAgentProviderPackageNames(providerInfo);
+		List<String> providerPackage = SshAuthenticationApiUtils.getAuthenticationProviderPackageNames(providerInfo);
 		if (providerInfo.size() == 1) {
 			onAgentSelected(providerPackage.get(0));
 		}
-		List<String> providerLabel = SshAuthenticationApiUtils.getAgentProviderLabel(getContext(), providerInfo);
+		List<String> providerLabel = SshAuthenticationApiUtils.getAuthenticationProviderLabel(getContext(), providerInfo);
 
 		AgentSelectionDialog agentSelectionDialog = AgentSelectionDialog.newInstance(providerPackage, providerLabel);
 		agentSelectionDialog.show(getFragmentManager(), "agentSelectionDialog");
