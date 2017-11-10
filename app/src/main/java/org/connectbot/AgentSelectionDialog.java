@@ -42,8 +42,8 @@ public class AgentSelectionDialog extends DialogFragment {
 
 	public static AgentSelectionDialog newInstance(List<String> agentList, List<String> agentNameList) {
 		Bundle args = new Bundle();
-		args.putStringArrayList(AGENTLIST, (ArrayList<String>) agentList);
-		args.putStringArrayList(AGENTNAMELIST, (ArrayList<String>) agentNameList);
+		args.putStringArrayList(AGENTLIST, new ArrayList<>(agentList));
+		args.putStringArrayList(AGENTNAMELIST, new ArrayList<>(agentNameList));
 
 		AgentSelectionDialog fragment = new AgentSelectionDialog();
 		fragment.setArguments(args);
