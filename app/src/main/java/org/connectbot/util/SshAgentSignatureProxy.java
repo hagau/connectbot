@@ -1,6 +1,7 @@
 /*
  * ConnectBot: simple, powerful, open-source SSH client for Android
  * Copyright 2017 Jonas Dippel, Marc Totzke
+ * Copyright (C) 2017 Christian Hagau <ach@hagau.se>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +39,13 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 
 
 public class SshAgentSignatureProxy extends SignatureProxy {
 
 	private Context mAppContext;
 
-    private AgentBean mAgentBean;
+	private AgentBean mAgentBean;
 
 	private AgentRequest mAgentRequest;
 
@@ -66,25 +66,23 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 		}
 	};
 
-    /**
-     * Instantiates a new SignatureProxy which needs a public key for the
-     * later authentication process.
-     */
-    public SshAgentSignatureProxy(Context mAppContext, AgentBean mAgentBean) throws InvalidKeySpecException, NoSuchAlgorithmException {
-        super(PubkeyUtils.decodePublic(mAgentBean.getPublicKey(), mAgentBean.getKeyType()));
+	/**
+	 * Instantiates a new SignatureProxy which needs a public key for the
+	 * later authentication process.
+	 */
+	public SshAgentSignatureProxy(Context mAppContext, AgentBean mAgentBean) throws InvalidKeySpecException, NoSuchAlgorithmException {
+		super(PubkeyUtils.decodePublic(mAgentBean.getPublicKey(), mAgentBean.getKeyType()));
 		this.mAppContext = mAppContext;
-        this.mAgentBean = mAgentBean;
+		this.mAgentBean = mAgentBean;
 
 		// this is always run from a connection thread, which is a bare Thread
 		Looper.prepare();
 		mResultHandler = new ResultHandler(new WeakReference<>(this));
-    }
+	}
 
-    @Override
-    public byte[] sign(final byte[] challenge, final String hashAlgorithm) throws IOException {
-		Log.d(getClass().toString(), "====>>>> executing sign in tid: "+ android.os.Process.myTid());
-
-        Intent request = new SigningRequest(challenge, mAgentBean.getKeyIdentifier(), translateHashAlgorithm(hashAlgorithm)).toIntent();
+	@Override
+	public byte[] sign(final byte[] challenge, final String hashAlgorithm) throws IOException {
+		Intent request = new SigningRequest(challenge, mAgentBean.getKeyIdentifier(), translateHashAlgorithm(hashAlgorithm)).toIntent();
 
 		mAgentRequest = new AgentRequest(request, mAgentBean.getPackageName());
 		mAgentRequest.setAgentResultHandler(mResultHandler);
@@ -101,13 +99,12 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 
 		byte[] signature = mResult.getByteArrayExtra(SshAuthenticationApi.EXTRA_SIGNATURE);
 
-		// TODO: error handling
 		if (signature == null) {
 			throw new IOException("No signature in agent response");
 		}
 
 		return signature;
-    }
+	}
 
 	private int translateHashAlgorithm(String hashAlgorithm) {
 		switch (hashAlgorithm) {
@@ -138,8 +135,7 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 				return;
 			}
 
-			Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_RESULT);
-			sshAgentSignatureProxy.mResult = result;
+			sshAgentSignatureProxy.mResult = msg.getData().getParcelable(AgentManager.AGENT_REQUEST_RESULT);
 			sshAgentSignatureProxy.mAppContext.unbindService(sshAgentSignatureProxy.mAgentConnection);
 			Looper.myLooper().quit();
 		}

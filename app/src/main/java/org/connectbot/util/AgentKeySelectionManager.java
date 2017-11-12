@@ -1,6 +1,6 @@
 /*
  * ConnectBot: simple, powerful, open-source SSH client for Android
- * Copyright 2017 Kenny Root, Jeffrey Sharkey
+ * Copyright (C) 2017 Christian Hagau <ach@hagau.se>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import android.content.ServiceConnection;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.util.Log;
 
 
 public class AgentKeySelectionManager {
@@ -78,12 +77,10 @@ public class AgentKeySelectionManager {
 		mAgentBean.setPackageName(mAgentName);
 	}
 
-    /**
+	/**
 	 * Select a key from an external ssh-agent
 	 */
 	public void selectKeyFromAgent() {
-		Log.d(getClass().toString(), "====>>>> selectKeyFromAgent tid: "+ android.os.Process.myTid());
-
 		mAppContext.bindService(new Intent(mAppContext, AgentManager.class), mAgentConnection, Context.BIND_AUTO_CREATE);
 
 	}
@@ -112,9 +109,11 @@ public class AgentKeySelectionManager {
 	protected void finishCancel() {
 		finish(RESULT_CODE_CANCELED, null);
 	}
+
 	protected void finishError() {
 		finish(PublicKeyResponse.RESULT_CODE_ERROR, null);
 	}
+
 	protected void finishSuccess() {
 		finish(PublicKeyResponse.RESULT_CODE_SUCCESS, mAgentBean);
 	}
@@ -144,7 +143,7 @@ public class AgentKeySelectionManager {
 		case SshAuthenticationApi.EDDSA:
 			return "Ed25519";
 		default:
-			throw new NoSuchAlgorithmException("Algorithm not supported: "+ algorithm);
+			throw new NoSuchAlgorithmException("Algorithm not supported: " + algorithm);
 		}
 	}
 
@@ -155,7 +154,7 @@ public class AgentKeySelectionManager {
 		agentRequest.setAgentResultHandler(mResultHandler);
 
 		mAgentManager.execute(agentRequest);
-    }
+	}
 
 	private void onKeySelected(KeySelectionResponse response) {
 		int resultCode = response.getResultCode();
@@ -169,14 +168,14 @@ public class AgentKeySelectionManager {
 		}
 	}
 
-    private void getPublicKey() {
+	private void getPublicKey() {
 		Intent request = new PublicKeyRequest(mAgentBean.getKeyIdentifier()).toIntent();
 
 		AgentRequest agentRequest = new AgentRequest(request, mAgentName);
 		agentRequest.setAgentResultHandler(mResultHandler);
 
 		mAgentManager.execute(agentRequest);
-    }
+	}
 
 	private void onPublicKey(PublicKeyResponse response) {
 		int resultCode = response.getResultCode();
@@ -208,8 +207,6 @@ public class AgentKeySelectionManager {
 		}
 	}
 
-
-
 	private ResultHandler mResultHandler = new ResultHandler(new WeakReference<>(this));
 
 	private static class ResultHandler extends Handler {
@@ -229,7 +226,7 @@ public class AgentKeySelectionManager {
 			if (msg.what == AgentManager.RESULT_CODE_CANCELED) {
 				agentKeySelectionManager.finishCancel();
 			} else {
-				Intent result = msg.getData().getParcelable(AgentRequest.AGENT_REQUEST_RESULT);
+				Intent result = msg.getData().getParcelable(AgentManager.AGENT_REQUEST_RESULT);
 				if (result != null) {
 					agentKeySelectionManager.onResult(result);
 				} else {

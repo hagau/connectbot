@@ -28,26 +28,27 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class AgentBean extends AbstractBean implements Parcelable {
-    public static final String BEAN_NAME = "agent";
+	public static final String BEAN_NAME = "agent";
 
-    private long id = -1;
-    private String keyIdentifier;
-    private String keyType;
-    private byte[] publicKey;
+	private long id = -1;
+	private String keyIdentifier;
+	private String keyType;
+	private byte[] publicKey;
 
 	private String packageName;
 
 	private String description;
 
-    public AgentBean() {}
+	public AgentBean() {
+	}
 
-    public AgentBean(String keyIdentifier, String keyType , String packageName, String description, byte[] publicKey) {
-        this.keyIdentifier = keyIdentifier;
-        this.keyType = keyType;
+	public AgentBean(String keyIdentifier, String keyType, String packageName, String description, byte[] publicKey) {
+		this.keyIdentifier = keyIdentifier;
+		this.keyType = keyType;
 		this.description = description;
-        this.packageName = packageName;
-        this.publicKey = publicKey;
-    }
+		this.packageName = packageName;
+		this.publicKey = publicKey;
+	}
 
 	protected AgentBean(Parcel in) {
 		id = in.readLong();
@@ -81,36 +82,36 @@ public class AgentBean extends AbstractBean implements Parcelable {
 	};
 
 	public String getKeyType() {
-        return keyType;
-    }
+		return keyType;
+	}
 
-    public void setKeyType(String keyType) {
-        this.keyType = keyType;
-    }
+	public void setKeyType(String keyType) {
+		this.keyType = keyType;
+	}
 
-    public long getId() {
-        return id;
-    }
+	public long getId() {
+		return id;
+	}
 
-    public void setId(long id) {
-        this.id = id;
-    }
+	public void setId(long id) {
+		this.id = id;
+	}
 
-    public String getKeyIdentifier() {
-        return keyIdentifier;
-    }
+	public String getKeyIdentifier() {
+		return keyIdentifier;
+	}
 
-    public void setKeyIdentifier(String keyIdentifier) {
-        this.keyIdentifier = keyIdentifier;
-    }
+	public void setKeyIdentifier(String keyIdentifier) {
+		this.keyIdentifier = keyIdentifier;
+	}
 
-    public String getPackageName() {
-        return packageName;
-    }
+	public String getPackageName() {
+		return packageName;
+	}
 
-    public void setPackageName(String packageName) {
-        this.packageName = packageName;
-    }
+	public void setPackageName(String packageName) {
+		this.packageName = packageName;
+	}
 
 	public void setDescription(String description) {
 		this.description = description;
@@ -120,55 +121,55 @@ public class AgentBean extends AbstractBean implements Parcelable {
 		return description;
 	}
 
-    public byte[] getPublicKey() {
-        if (publicKey != null) {
+	public byte[] getPublicKey() {
+		if (publicKey != null) {
 			return publicKey.clone();
 		} else {
 			return null;
 		}
-    }
+	}
 
-    public void setPublicKey(byte[] encoded) {
-        if (encoded == null)
-            publicKey = null;
-        else
-            publicKey = encoded.clone();
-    }
+	public void setPublicKey(byte[] encoded) {
+		if (encoded == null)
+			publicKey = null;
+		else
+			publicKey = encoded.clone();
+	}
 
-    public String getAgentAppName(Context context) {
-        PackageManager packageManager = context.getPackageManager();
-        ApplicationInfo applicationInfo = null;
-        try {
-            applicationInfo = packageManager.getApplicationInfo(getPackageName(), 0);
-        } catch (final PackageManager.NameNotFoundException e) {
-            return context.getString(R.string.Unknown);
-        }
-        return (String) (applicationInfo != null ? packageManager.getApplicationLabel(applicationInfo) : context.getString(R.string.Unknown));
-    }
+	public String getAgentAppName(Context context) {
+		PackageManager packageManager = context.getPackageManager();
+		ApplicationInfo applicationInfo = null;
+		try {
+			applicationInfo = packageManager.getApplicationInfo(getPackageName(), 0);
+		} catch (final PackageManager.NameNotFoundException e) {
+			return context.getString(R.string.Unknown);
+		}
+		return (String) (applicationInfo != null ? packageManager.getApplicationLabel(applicationInfo) : context.getString(R.string.Unknown));
+	}
 
-    @Override
-    public ContentValues getValues() {
+	@Override
+	public ContentValues getValues() {
 
-        ContentValues values = new ContentValues();
+		ContentValues values = new ContentValues();
 
-        values.put(AgentDatabase.FIELD_AGENT_KEY_IDENTIFIER, keyIdentifier);
-        values.put(AgentDatabase.FIELD_AGENT_KEY_TYPE, keyType);
-        values.put(AgentDatabase.FIELD_AGENT_DESCRIPTION, description);
+		values.put(AgentDatabase.FIELD_AGENT_KEY_IDENTIFIER, keyIdentifier);
+		values.put(AgentDatabase.FIELD_AGENT_KEY_TYPE, keyType);
+		values.put(AgentDatabase.FIELD_AGENT_DESCRIPTION, description);
 		values.put(AgentDatabase.FIELD_AGENT_PACKAGE_NAME, packageName);
-        values.put(AgentDatabase.FIELD_AGENT_PUBLIC_KEY, publicKey);
+		values.put(AgentDatabase.FIELD_AGENT_PUBLIC_KEY, publicKey);
 
-        return values;
-    }
+		return values;
+	}
 
-    @Override
-    public String getBeanName() {
-        return BEAN_NAME;
-    }
+	@Override
+	public String getBeanName() {
+		return BEAN_NAME;
+	}
 
-    @Override
-    public int describeContents() {
-        return 0;
-    }
+	@Override
+	public int describeContents() {
+		return 0;
+	}
 
 
 }

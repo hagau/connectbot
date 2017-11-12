@@ -24,7 +24,6 @@ import java.util.Map;
 
 import org.connectbot.bean.AgentBean;
 import org.connectbot.bean.HostBean;
-import org.connectbot.service.AgentManager;
 import org.connectbot.service.TerminalBridge;
 import org.connectbot.service.TerminalManager;
 import org.connectbot.util.AgentDatabase;
@@ -42,7 +41,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -196,18 +194,6 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 		super.onStop();
 
 		unbindService(mTerminalConnection);
-	}
-
-	@Override
-	public void onPause() {
-		super.onPause();
-		Log.d(getClass().toString(), "onPause called");
-	}
-
-	@Override
-	public void onResume() {
-		super.onResume();
-		Log.d(getClass().toString(), "onResume called");
 	}
 
 	@Override

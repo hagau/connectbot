@@ -125,7 +125,6 @@ public class TerminalManager extends Service implements BridgeDisconnectedListen
 	@Override
 	public void onCreate() {
 		Log.i(TAG, "Starting service");
-		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
 
 		prefs = PreferenceManager.getDefaultSharedPreferences(this);
 		prefs.registerOnSharedPreferenceChangeListener(this);
@@ -222,7 +221,6 @@ public class TerminalManager extends Service implements BridgeDisconnectedListen
 	 * Open a new SSH session using the given parameters.
 	 */
 	private TerminalBridge openConnection(HostBean host) throws IllegalArgumentException, IOException {
-		Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
 		// throw exception if terminal already open
 		if (getConnectedBridge(host) != null) {
 			throw new IllegalArgumentException("Connection already open for that nickname");

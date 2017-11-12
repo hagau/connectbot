@@ -45,7 +45,6 @@ import android.support.v4.app.Fragment;
 import android.support.v7.widget.PopupMenu;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -518,7 +517,6 @@ public class HostEditorFragment extends Fragment {
 	private void selectKeyFromAgent() {
 		// select an agent first
 		selectAgent();
-		Log.d(getClass().toString(), "====>>>> selectKeyFromAgent tid: " + android.os.Process.myTid());
 	}
 
 	private void selectAgent() {

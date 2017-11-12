@@ -22,13 +22,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.connectbot.bean.HostBean;
-import org.connectbot.service.AgentManager;
 import org.connectbot.service.BridgeDisconnectedListener;
 import org.connectbot.service.PromptHelper;
 import org.connectbot.service.TerminalBridge;
 import org.connectbot.service.TerminalKeyListener;
 import org.connectbot.service.TerminalManager;
-import org.connectbot.util.AgentRequest;
 import org.connectbot.util.PreferenceConstants;
 import org.connectbot.util.TerminalViewPager;
 
@@ -734,7 +732,6 @@ public class ConsoleActivity extends AppCompatActivity implements BridgeDisconne
 				}
 			});
 	}
-
 
 	private void addKeyRepeater(View view) {
 		KeyRepeater keyRepeater = new KeyRepeater(keyRepeatHandler, view);

@@ -278,8 +278,8 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 						}
 					}
 				} else if (pubkeyId == HostDatabase.PUBKEYID_AGENT) {
-                    // use a ssh agent to authenticate
-                    bridge.outputLine(manager.getString(R.string.Attempting_to_authenticate));
+					// use a ssh agent to authenticate
+					bridge.outputLine(manager.getString(R.string.Attempting_to_authenticate));
 					AgentBean agentBean = manager.agentdb.findAgentById(host.getAuthAgentId());
 					if (agentBean == null) {
 						bridge.outputLine(manager.getString(R.string.SSH_Agent_could_not_be_find));
@@ -292,7 +292,7 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 					} else {
 						bridge.outputLine(manager.getString(R.string.Failed_to_authenticate_with_ssh_agent));
 					}
-                } else {
+				} else {
 					bridge.outputLine(manager.res.getString(R.string.terminal_auth_pubkey_specific));
 					// use a specific key for this host, as requested
 					PubkeyBean pubkey = manager.pubkeydb.findPubkeyById(pubkeyId);
@@ -408,21 +408,22 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 		return success;
 	}
 
-    /**
-     * Tries the authentication with a SSH Agent via an aidl interface
-     * @return {@code true} for successful authentication
-     */
+	/**
+	 * Tries the authentication with a SSH Agent via an aidl interface
+	 *
+	 * @return {@code true} for successful authentication
+	 */
 	private boolean tryAgentAuthentication(String username, AgentBean agentBean) {
 		try {
-			Log.d(getClass().toString(), "====>>>> tid: "+ android.os.Process.myTid());
+			Log.d(getClass().toString(), "====>>>> tid: " + android.os.Process.myTid());
 
 			SshAgentSignatureProxy sshAgentSignatureManager = new SshAgentSignatureProxy(manager.getApplicationContext(), agentBean);
-           	return connection.authenticateWithPublicKey(username, sshAgentSignatureManager);
+			return connection.authenticateWithPublicKey(username, sshAgentSignatureManager);
 		} catch (InvalidKeySpecException | NoSuchAlgorithmException | IOException e) {
 			e.printStackTrace();
 			return false;
 		}
-    }
+	}
 
 	/**
 	 * Internal method to request actual PTY terminal once we've finished

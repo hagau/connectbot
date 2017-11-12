@@ -17,17 +17,6 @@
 
 package org.connectbot;
 
-import java.util.List;
-
-import org.connectbot.bean.HostBean;
-import org.connectbot.data.HostStorage;
-import org.connectbot.service.OnHostStatusChangedListener;
-import org.connectbot.service.TerminalBridge;
-import org.connectbot.service.TerminalManager;
-import org.connectbot.transport.TransportFactory;
-import org.connectbot.util.HostDatabase;
-import org.connectbot.util.PreferenceConstants;
-
 import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.Context;
@@ -59,6 +48,17 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import org.connectbot.bean.HostBean;
+import org.connectbot.data.HostStorage;
+import org.connectbot.service.OnHostStatusChangedListener;
+import org.connectbot.service.TerminalBridge;
+import org.connectbot.service.TerminalManager;
+import org.connectbot.transport.TransportFactory;
+import org.connectbot.util.HostDatabase;
+import org.connectbot.util.PreferenceConstants;
+
+import java.util.List;
 
 public class HostListActivity extends AppCompatListActivity implements OnHostStatusChangedListener {
 	public final static String TAG = "CB.HostListActivity";
@@ -225,8 +225,6 @@ public class HostListActivity extends AppCompatListActivity implements OnHostSta
 		});
 
 		this.inflater = LayoutInflater.from(this);
-
-
 	}
 
 	@Override

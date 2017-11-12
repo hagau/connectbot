@@ -1,6 +1,6 @@
 /*
  * ConnectBot: simple, powerful, open-source SSH client for Android
- * Copyright 2017 Kenny Root, Jeffrey Sharkey
+ * Copyright (C) 2017 Christian Hagau <ach@hagau.se>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,13 +36,14 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 public class AgentManager extends Service {
 
 	public static int AGENT_REQUEST_CODE = 1729;
 
 	public static final int RESULT_CODE_CANCELED = -1;
+
+	public static String AGENT_REQUEST_RESULT = "result";
 
 	public static final String AGENT_PENDING_INTENT = "pendingIntent";
 
@@ -53,6 +54,7 @@ public class AgentManager extends Service {
 			return AgentManager.this;
 		}
 	}
+
 	private final IBinder mAgentBinder = new AgentBinder();
 
 	@Nullable
@@ -88,8 +90,6 @@ public class AgentManager extends Service {
 	}
 
 	private void executeInternal(ISshAuthenticationService sshAgent, final AgentRequest agentRequest) {
-		Log.d(getClass().toString(), "====>>>> executing request in tid: " + android.os.Process.myTid());
-
 		SshAuthenticationApi agentApi = new SshAuthenticationApi(getApplicationContext(), sshAgent);
 
 		agentApi.executeApiAsync(agentRequest.getRequest(), new SshAuthenticationApi.ISshAgentCallback() {
@@ -118,7 +118,7 @@ public class AgentManager extends Service {
 			Handler resultHandler = agentRequest.getAgentResultHandler();
 
 			Bundle bundle = new Bundle();
-			bundle.putParcelable(AgentRequest.AGENT_REQUEST_RESULT, result);
+			bundle.putParcelable(AGENT_REQUEST_RESULT, result);
 
 			Message message = resultHandler.obtainMessage();
 			message.setData(bundle);
@@ -140,7 +140,7 @@ public class AgentManager extends Service {
 	}
 
 	public void cancelPendingIntent() {
-			mPendingIntentsStack.pop();
+		mPendingIntentsStack.pop();
 	}
 
 	public void processPendingIntentResult(int resultCode, Intent result) {

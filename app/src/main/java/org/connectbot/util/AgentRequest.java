@@ -1,6 +1,6 @@
 /*
  * ConnectBot: simple, powerful, open-source SSH client for Android
- * Copyright 2017 Kenny Root, Jeffrey Sharkey
+ * Copyright (C) 2017 Christian Hagau <ach@hagau.se>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,6 @@ import android.content.Intent;
 import android.os.Handler;
 
 public class AgentRequest {
-
-	public static String AGENT_REQUEST_RESULT = "result";
-
-	public static int AGENT_REQUEST_CODE = 1729;
 
 	private Handler mAgentResultHandler;
 
