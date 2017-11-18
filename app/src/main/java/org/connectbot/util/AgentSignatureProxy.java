@@ -41,7 +41,7 @@ import android.os.Looper;
 import android.os.Message;
 
 
-public class SshAgentSignatureProxy extends SignatureProxy {
+public class AgentSignatureProxy extends SignatureProxy {
 
 	private Context mAppContext;
 
@@ -70,7 +70,7 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 	 * Instantiates a new SignatureProxy which needs a public key for the
 	 * later authentication process.
 	 */
-	public SshAgentSignatureProxy(Context mAppContext, AgentBean mAgentBean) throws InvalidKeySpecException, NoSuchAlgorithmException {
+	public AgentSignatureProxy(Context mAppContext, AgentBean mAgentBean) throws InvalidKeySpecException, NoSuchAlgorithmException {
 		super(PubkeyUtils.decodePublic(mAgentBean.getPublicKey(), mAgentBean.getKeyType()));
 		this.mAppContext = mAppContext;
 		this.mAgentBean = mAgentBean;
@@ -122,21 +122,21 @@ public class SshAgentSignatureProxy extends SignatureProxy {
 	}
 
 	private static class ResultHandler extends Handler {
-		private WeakReference<SshAgentSignatureProxy> sshAgentSignatureProxyWeakReference;
+		private WeakReference<AgentSignatureProxy> sshAgentSignatureProxyWeakReference;
 
-		public ResultHandler(WeakReference<SshAgentSignatureProxy> sshAgentSignatureProxyWeakReference) {
+		public ResultHandler(WeakReference<AgentSignatureProxy> sshAgentSignatureProxyWeakReference) {
 			this.sshAgentSignatureProxyWeakReference = sshAgentSignatureProxyWeakReference;
 		}
 
 		@Override
 		public void handleMessage(Message msg) {
-			SshAgentSignatureProxy sshAgentSignatureProxy = sshAgentSignatureProxyWeakReference.get();
-			if (sshAgentSignatureProxy == null) {
+			AgentSignatureProxy agentSignatureProxy = sshAgentSignatureProxyWeakReference.get();
+			if (agentSignatureProxy == null) {
 				return;
 			}
 
-			sshAgentSignatureProxy.mResult = msg.getData().getParcelable(AgentManager.AGENT_REQUEST_RESULT);
-			sshAgentSignatureProxy.mAppContext.unbindService(sshAgentSignatureProxy.mAgentConnection);
+			agentSignatureProxy.mResult = msg.getData().getParcelable(AgentManager.AGENT_REQUEST_RESULT);
+			agentSignatureProxy.mAppContext.unbindService(agentSignatureProxy.mAgentConnection);
 			Looper.myLooper().quit();
 		}
 	}
