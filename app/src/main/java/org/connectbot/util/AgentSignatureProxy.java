@@ -77,7 +77,7 @@ public class AgentSignatureProxy extends SignatureProxy {
 
 		// this is always run from a connection thread, which is a bare Thread
 		Looper.prepare();
-		mResultHandler = new ResultHandler(new WeakReference<>(this));
+		mResultHandler = new ResultHandler(this);
 	}
 
 	@Override
@@ -122,16 +122,17 @@ public class AgentSignatureProxy extends SignatureProxy {
 	}
 
 	private static class ResultHandler extends Handler {
-		private WeakReference<AgentSignatureProxy> sshAgentSignatureProxyWeakReference;
+		private WeakReference<AgentSignatureProxy> mAgentSignatureProxyWeakReference;
 
-		public ResultHandler(WeakReference<AgentSignatureProxy> sshAgentSignatureProxyWeakReference) {
-			this.sshAgentSignatureProxyWeakReference = sshAgentSignatureProxyWeakReference;
+		public ResultHandler(AgentSignatureProxy agentSignatureProxy) {
+			mAgentSignatureProxyWeakReference = new WeakReference<>(agentSignatureProxy);
 		}
 
 		@Override
 		public void handleMessage(Message msg) {
-			AgentSignatureProxy agentSignatureProxy = sshAgentSignatureProxyWeakReference.get();
+			AgentSignatureProxy agentSignatureProxy = mAgentSignatureProxyWeakReference.get();
 			if (agentSignatureProxy == null) {
+				Looper.myLooper().quit();
 				return;
 			}
 

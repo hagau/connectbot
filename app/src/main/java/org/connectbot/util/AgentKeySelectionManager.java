@@ -207,18 +207,18 @@ public class AgentKeySelectionManager {
 		}
 	}
 
-	private ResultHandler mResultHandler = new ResultHandler(new WeakReference<>(this));
+	private ResultHandler mResultHandler = new ResultHandler(this);
 
 	private static class ResultHandler extends Handler {
-		private WeakReference<AgentKeySelectionManager> sshAgentSignatureProxyWeakReference;
+		private WeakReference<AgentKeySelectionManager> mAgentKeySelectionWeakReference;
 
-		public ResultHandler(WeakReference<AgentKeySelectionManager> sshAgentSignatureProxyWeakReference) {
-			this.sshAgentSignatureProxyWeakReference = sshAgentSignatureProxyWeakReference;
+		public ResultHandler(AgentKeySelectionManager agentKeySelection) {
+			mAgentKeySelectionWeakReference = new WeakReference<>(agentKeySelection);
 		}
 
 		@Override
 		public void handleMessage(Message msg) {
-			AgentKeySelectionManager agentKeySelectionManager = sshAgentSignatureProxyWeakReference.get();
+			AgentKeySelectionManager agentKeySelectionManager = mAgentKeySelectionWeakReference.get();
 			if (agentKeySelectionManager == null) {
 				return;
 			}
