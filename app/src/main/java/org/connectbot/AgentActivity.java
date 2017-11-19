@@ -33,13 +33,17 @@ import android.util.Log;
 
 public class AgentActivity extends AppCompatActivity {
 	private final static String TAG = "CB.AgentActivity";
+	private final static String PENDING_INTENT_SENT = "pendingIntentSent";
 
-	protected AgentManager mAgentManager = null;
+	private AgentManager mAgentManager = null;
+	private boolean mPendingIntentSent;
 
 	private ServiceConnection mAgentConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			mAgentManager = ((AgentManager.AgentBinder) service).getService();
-			startPendingIntent();
+			if (!mPendingIntentSent) {
+				startPendingIntent();
+			}
 		}
 
 		public void onServiceDisconnected(ComponentName className) {
@@ -51,7 +55,25 @@ public class AgentActivity extends AppCompatActivity {
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
 
+		if (icicle != null) {
+			mPendingIntentSent = icicle.getBoolean(PENDING_INTENT_SENT);
+		}
+
 		bindService(new Intent(this, AgentManager.class), mAgentConnection, Context.BIND_AUTO_CREATE);
+	}
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+
+		unbindService(mAgentConnection);
+	}
+
+	@Override
+	public void onSaveInstanceState(Bundle icicle) {
+		icicle.putBoolean(PENDING_INTENT_SENT, mPendingIntentSent);
+
+		super.onSaveInstanceState(icicle);
 	}
 
 	private void startPendingIntent() {
@@ -60,6 +82,7 @@ public class AgentActivity extends AppCompatActivity {
 		try {
 			startIntentSenderForResult(pendingIntent.getIntentSender(), AgentManager.AGENT_REQUEST_CODE,
 					null, 0, 0, 0);
+			mPendingIntentSent = true;
 		} catch (IntentSender.SendIntentException e) {
 			Log.e(TAG , "Couldn't start PendingIntent", e);
 			mAgentManager.cancelPendingIntent();
@@ -73,8 +96,6 @@ public class AgentActivity extends AppCompatActivity {
 		if (requestCode == AgentManager.AGENT_REQUEST_CODE) {
 			mAgentManager.processPendingIntentResult(resultCode, data);
 		}
-
-		unbindService(mAgentConnection);
 
 		setResult(Activity.RESULT_OK);
 		finish();
