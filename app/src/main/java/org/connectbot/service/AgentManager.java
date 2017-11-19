@@ -36,8 +36,10 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 public class AgentManager extends Service {
+	private static final String TAG = "CB.AgentManager";
 
 	public static int AGENT_REQUEST_CODE = 1729;
 
@@ -142,8 +144,15 @@ public class AgentManager extends Service {
 	}
 
 	public void processPendingIntentResult(int resultCode, Intent result) {
-		// get the request belonging to this result
-		AgentRequest agentRequest = mPendingIntentsStack.pop();
+		AgentRequest agentRequest;
+		if (!mPendingIntentsStack.isEmpty()) {
+			// get the request belonging to this result
+			agentRequest = mPendingIntentsStack.pop();
+		} else {
+			Log.e(TAG , "Couldn't get AgentRequest, empty stack");
+			return;
+		}
+
 		if (resultCode == Activity.RESULT_CANCELED) {
 			agentRequest.getAgentResultHandler().sendEmptyMessage(RESULT_CODE_CANCELED);
 			return;
