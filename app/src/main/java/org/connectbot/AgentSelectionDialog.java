@@ -32,6 +32,7 @@ import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -42,6 +43,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 public class AgentSelectionDialog extends DialogFragment {
+	private static final String TAG = "CB.AgentSelectionDialog";
 	private static final String AGENTLIST = "agentList";
 	private static final String AGENTNAMELIST = "agentNameList";
 	private Button mSelect;
@@ -73,7 +75,7 @@ public class AgentSelectionDialog extends DialogFragment {
 			try {
 				agentIcons.add(context.getPackageManager().getApplicationIcon(agent));
 			} catch (PackageManager.NameNotFoundException e) {
-				e.printStackTrace();
+				Log.e(TAG , "Couldn't load app icon", e);
 				return null;
 			}
 		}

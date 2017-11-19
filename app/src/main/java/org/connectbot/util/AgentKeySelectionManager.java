@@ -37,9 +37,11 @@ import android.content.ServiceConnection;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.util.Log;
 
 
 public class AgentKeySelectionManager {
+	public static final String TAG = "CB.AgentKeySelectionManager";
 	public static final int RESULT_CODE_ERROR = SshAuthenticationApi.RESULT_CODE_ERROR;
 	public static final int RESULT_CODE_SUCCESS = SshAuthenticationApi.RESULT_CODE_SUCCESS;
 	public static final int RESULT_CODE_CANCELED = AgentManager.RESULT_CODE_CANCELED;
@@ -123,10 +125,10 @@ public class AgentKeySelectionManager {
 		try {
 			publicKey = PubkeyUtils.decodePublic(encodedPublicKey, translateAlgorithm(algorithmFlag));
 		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
+			Log.e(TAG , "Couldn't translate algorithm", e);
 			return null;
 		} catch (InvalidKeySpecException e) {
-			e.printStackTrace();
+			Log.e(TAG , "Couldn't decode public key", e);
 			return null;
 		}
 		return publicKey;
@@ -195,7 +197,7 @@ public class AgentKeySelectionManager {
 			try {
 				mAgentBean.setKeyType(translateAlgorithm(algorithm));
 			} catch (NoSuchAlgorithmException e) {
-				e.printStackTrace();
+				Log.e(TAG , "Couldn't translate algorithm", e);
 				finishError();
 				return;
 			}

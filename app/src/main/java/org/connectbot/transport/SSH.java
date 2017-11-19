@@ -420,7 +420,7 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 			AgentSignatureProxy sshAgentSignatureManager = new AgentSignatureProxy(manager.getApplicationContext(), agentBean);
 			return connection.authenticateWithPublicKey(username, sshAgentSignatureManager);
 		} catch (InvalidKeySpecException | NoSuchAlgorithmException | IOException e) {
-			e.printStackTrace();
+			Log.e(TAG , "Couldn't authenticate via agent", e);
 			return false;
 		}
 	}

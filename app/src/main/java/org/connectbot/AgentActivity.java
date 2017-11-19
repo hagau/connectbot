@@ -29,8 +29,10 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 
 public class AgentActivity extends AppCompatActivity {
+	private final static String TAG = "CB.AgentActivity";
 
 	protected AgentManager mAgentManager = null;
 
@@ -59,7 +61,7 @@ public class AgentActivity extends AppCompatActivity {
 			startIntentSenderForResult(pendingIntent.getIntentSender(), AgentManager.AGENT_REQUEST_CODE,
 					null, 0, 0, 0);
 		} catch (IntentSender.SendIntentException e) {
-			e.printStackTrace();
+			Log.e(TAG , "Couldn't start PendingIntent", e);
 			mAgentManager.cancelPendingIntent();
 		}
 	}
