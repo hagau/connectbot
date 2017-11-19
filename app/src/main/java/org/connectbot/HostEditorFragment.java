@@ -28,7 +28,7 @@ import org.connectbot.transport.SSH;
 import org.connectbot.transport.Telnet;
 import org.connectbot.transport.TransportFactory;
 import org.connectbot.util.AgentDatabase;
-import org.connectbot.util.AgentKeySelectionManager;
+import org.connectbot.util.AgentKeySelection;
 import org.connectbot.util.HostDatabase;
 import org.connectbot.views.CheckableMenuItem;
 import org.openintents.ssh.authentication.util.SshAuthenticationApiUtils;
@@ -545,22 +545,22 @@ public class HostEditorFragment extends Fragment {
 	}
 
 	private void selectKey(String agentName) {
-		AgentKeySelectionManager.AgentKeySelectionCallback resultCallback = new AgentKeySelectionManager.AgentKeySelectionCallback() {
+		AgentKeySelection.AgentKeySelectionCallback resultCallback = new AgentKeySelection.AgentKeySelectionCallback() {
 			@Override
 			public void onKeySelectionResult(int resultCode, AgentBean agentBean) {
 				onKeySelected(resultCode, agentBean);
 			}
 		};
-		AgentKeySelectionManager keySelectionManager = new AgentKeySelectionManager(getActivity().getApplicationContext(), agentName, resultCallback);
+		AgentKeySelection keySelectionManager = new AgentKeySelection(getActivity().getApplicationContext(), agentName, resultCallback);
 		keySelectionManager.selectKeyFromAgent();
 	}
 
 	private void onKeySelected(int resultCode, AgentBean agentBean) {
-		if (resultCode == AgentKeySelectionManager.RESULT_CODE_SUCCESS) {
+		if (resultCode == AgentKeySelection.RESULT_CODE_SUCCESS) {
 			mListener.onAgentConfigured(agentBean);
 			mPubkeyText.setText(getAgentKeyDescription(agentBean));
 			Toast.makeText(getContext(), R.string.Agent_key_selection_successful, Toast.LENGTH_SHORT).show();
-		} else if (resultCode == AgentKeySelectionManager.RESULT_CODE_CANCELED) {
+		} else if (resultCode == AgentKeySelection.RESULT_CODE_CANCELED) {
 			Toast.makeText(getContext(), R.string.Agent_key_selection_cancelled, Toast.LENGTH_SHORT).show();
 		} else {
 			Toast.makeText(getContext(), R.string.Agent_key_selection_failed, Toast.LENGTH_SHORT).show();

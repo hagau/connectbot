@@ -40,8 +40,8 @@ import android.os.Message;
 import android.util.Log;
 
 
-public class AgentKeySelectionManager {
-	public static final String TAG = "CB.AgentKeySelectionManager";
+public class AgentKeySelection {
+	public static final String TAG = "CB.AgentKeySelection";
 	public static final int RESULT_CODE_ERROR = SshAuthenticationApi.RESULT_CODE_ERROR;
 	public static final int RESULT_CODE_SUCCESS = SshAuthenticationApi.RESULT_CODE_SUCCESS;
 	public static final int RESULT_CODE_CANCELED = AgentManager.RESULT_CODE_CANCELED;
@@ -70,7 +70,7 @@ public class AgentKeySelectionManager {
 
 	private AgentBean mAgentBean;
 
-	public AgentKeySelectionManager(Context appContext, String agentName, AgentKeySelectionCallback resultCallback) {
+	public AgentKeySelection(Context appContext, String agentName, AgentKeySelectionCallback resultCallback) {
 		mAppContext = appContext;
 		mAgentName = agentName;
 		mResultCallback = resultCallback;
@@ -212,27 +212,27 @@ public class AgentKeySelectionManager {
 	private ResultHandler mResultHandler = new ResultHandler(this);
 
 	private static class ResultHandler extends Handler {
-		private WeakReference<AgentKeySelectionManager> mAgentKeySelectionWeakReference;
+		private WeakReference<AgentKeySelection> mAgentKeySelectionWeakReference;
 
-		public ResultHandler(AgentKeySelectionManager agentKeySelection) {
+		public ResultHandler(AgentKeySelection agentKeySelection) {
 			mAgentKeySelectionWeakReference = new WeakReference<>(agentKeySelection);
 		}
 
 		@Override
 		public void handleMessage(Message msg) {
-			AgentKeySelectionManager agentKeySelectionManager = mAgentKeySelectionWeakReference.get();
-			if (agentKeySelectionManager == null) {
+			AgentKeySelection agentKeySelection = mAgentKeySelectionWeakReference.get();
+			if (agentKeySelection == null) {
 				return;
 			}
 
 			if (msg.what == AgentManager.RESULT_CODE_CANCELED) {
-				agentKeySelectionManager.finishCancel();
+				agentKeySelection.finishCancel();
 			} else {
 				Intent result = msg.getData().getParcelable(AgentManager.AGENT_REQUEST_RESULT);
 				if (result != null) {
-					agentKeySelectionManager.onResult(result);
+					agentKeySelection.onResult(result);
 				} else {
-					agentKeySelectionManager.finishError();
+					agentKeySelection.finishError();
 				}
 			}
 		}
