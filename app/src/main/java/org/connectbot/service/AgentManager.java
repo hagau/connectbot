@@ -98,7 +98,6 @@ public class AgentManager extends Service {
 				processResponse(intent, agentRequest);
 			}
 		});
-
 	}
 
 	private void processResponse(Intent response, AgentRequest agentRequest) {
@@ -136,7 +135,6 @@ public class AgentManager extends Service {
 		Intent intent = new Intent(this, AgentActivity.class);
 		intent.putExtra(AGENT_PENDING_INTENT, pendingIntent);
 		startActivity(intent);
-
 	}
 
 	public void cancelPendingIntent() {
@@ -158,6 +156,5 @@ public class AgentManager extends Service {
 			execute(agentRequest);
 		}
 	}
-
 }
 

@@ -93,7 +93,6 @@ public class AgentDatabase extends RobustSQLiteOpenHelper {
 
 	@Override
 	public void onRobustUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) throws SQLiteException {
-
 	}
 
 	/**

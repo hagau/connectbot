@@ -415,8 +415,6 @@ public class SSH extends AbsTransport implements ConnectionMonitor, InteractiveC
 	 */
 	private boolean tryAgentAuthentication(String username, AgentBean agentBean) {
 		try {
-			Log.d(getClass().toString(), "====>>>> tid: " + android.os.Process.myTid());
-
 			AgentSignatureProxy sshAgentSignatureManager = new AgentSignatureProxy(manager.getApplicationContext(), agentBean);
 			return connection.authenticateWithPublicKey(username, sshAgentSignatureManager);
 		} catch (InvalidKeySpecException | NoSuchAlgorithmException | IOException e) {

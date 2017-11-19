@@ -203,6 +203,5 @@ public class AgentSelectionDialog extends DialogFragment {
 			vName = (TextView) itemView.findViewById(R.id.agentName);
 			vIcon = (ImageView) itemView.findViewById(R.id.agentIcon);
 		}
-
 	}
 }

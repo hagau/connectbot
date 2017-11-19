@@ -1,6 +1,6 @@
 /*
  * ConnectBot: simple, powerful, open-source SSH client for Android
- * Copyright 2017 Jonas Dippel, Marc Totzke
+ * Copyright 2017 Jonas Dippel, Michael Perk, Marc Totzke
  * Copyright (C) 2017 Christian Hagau <ach@hagau.se>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -141,6 +141,5 @@ public class AgentSignatureProxy extends SignatureProxy {
 			Looper.myLooper().quit();
 		}
 	}
-
 }
 

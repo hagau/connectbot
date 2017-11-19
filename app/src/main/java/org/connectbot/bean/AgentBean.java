@@ -170,6 +170,4 @@ public class AgentBean extends AbstractBean implements Parcelable {
 	public int describeContents() {
 		return 0;
 	}
-
-
 }

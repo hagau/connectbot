@@ -84,7 +84,6 @@ public class AgentKeySelection {
 	 */
 	public void selectKeyFromAgent() {
 		mAppContext.bindService(new Intent(mAppContext, AgentManager.class), mAgentConnection, Context.BIND_AUTO_CREATE);
-
 	}
 
 	protected void onResult(Intent response) {
@@ -113,14 +112,14 @@ public class AgentKeySelection {
 	}
 
 	protected void finishError() {
-		finish(PublicKeyResponse.RESULT_CODE_ERROR, null);
+		finish(RESULT_CODE_ERROR, null);
 	}
 
 	protected void finishSuccess() {
-		finish(PublicKeyResponse.RESULT_CODE_SUCCESS, mAgentBean);
+		finish(RESULT_CODE_SUCCESS, mAgentBean);
 	}
 
-	private PublicKey getPublicKey(byte[] encodedPublicKey, int algorithmFlag) {
+	private PublicKey decodePublicKey(byte[] encodedPublicKey, int algorithmFlag) {
 		PublicKey publicKey;
 		try {
 			publicKey = PubkeyUtils.decodePublic(encodedPublicKey, translateAlgorithm(algorithmFlag));
@@ -188,7 +187,7 @@ public class AgentKeySelection {
 			int algorithm = response.getKeyAlgorithm();
 
 			// try decoding the encoded key to make sure it can be used for authentication later
-			PublicKey publicKey = getPublicKey(encodedPublicKey, algorithm);
+			PublicKey publicKey = decodePublicKey(encodedPublicKey, algorithm);
 			if (publicKey == null) {
 				finishError();
 				return;
