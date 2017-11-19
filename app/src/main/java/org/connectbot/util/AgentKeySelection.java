@@ -22,7 +22,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 
+import org.connectbot.R;
 import org.connectbot.bean.AgentBean;
+import org.connectbot.bean.HostBean;
 import org.connectbot.service.AgentManager;
 import org.openintents.ssh.authentication.SshAuthenticationApi;
 import org.openintents.ssh.authentication.request.KeySelectionRequest;
@@ -38,16 +40,14 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
+import android.widget.Toast;
 
 
 public class AgentKeySelection {
 	public static final String TAG = "CB.AgentKeySelection";
-	public static final int RESULT_CODE_ERROR = SshAuthenticationApi.RESULT_CODE_ERROR;
-	public static final int RESULT_CODE_SUCCESS = SshAuthenticationApi.RESULT_CODE_SUCCESS;
-	public static final int RESULT_CODE_CANCELED = AgentManager.RESULT_CODE_CANCELED;
 
 	public interface AgentKeySelectionCallback {
-		void onKeySelectionResult(int resultCode, AgentBean agentBean);
+		void onKeySelectionUpdate();
 	}
 
 	private AgentManager mAgentManager = null;
@@ -68,12 +68,15 @@ public class AgentKeySelection {
 
 	private AgentKeySelectionCallback mResultCallback;
 
+	private HostBean mHostBean;
 	private AgentBean mAgentBean;
 
-	public AgentKeySelection(Context appContext, String agentName, AgentKeySelectionCallback resultCallback) {
+	public AgentKeySelection(Context appContext, HostBean hostBean, String agentName, AgentKeySelectionCallback resultCallback) {
 		mAppContext = appContext;
 		mAgentName = agentName;
 		mResultCallback = resultCallback;
+
+		mHostBean = hostBean;
 
 		mAgentBean = new AgentBean();
 		mAgentBean.setPackageName(mAgentName);
@@ -101,22 +104,34 @@ public class AgentKeySelection {
 		}
 	}
 
-	private void finish(int resultCode, AgentBean agentBean) {
-		mResultCallback.onKeySelectionResult(resultCode, agentBean);
-
+	private void finish() {
+		mResultCallback.onKeySelectionUpdate();
 		mAppContext.unbindService(mAgentConnection);
 	}
 
 	protected void finishCancel() {
-		finish(RESULT_CODE_CANCELED, null);
+		Toast.makeText(mAppContext, R.string.Agent_key_selection_cancelled, Toast.LENGTH_SHORT).show();
+		finish();
 	}
 
 	protected void finishError() {
-		finish(RESULT_CODE_ERROR, null);
+		Toast.makeText(mAppContext, R.string.Agent_key_selection_failed, Toast.LENGTH_SHORT).show();
+		finish();
 	}
 
 	protected void finishSuccess() {
-		finish(RESULT_CODE_SUCCESS, mAgentBean);
+		if (mAgentBean != null) {
+			AgentDatabase agentDatabase = AgentDatabase.get(mAppContext);
+			long oldAgentId = mHostBean.getAuthAgentId();
+			if (oldAgentId != HostDatabase.AGENTID_NONE) {
+				agentDatabase.deleteAgentById(oldAgentId);
+			}
+			agentDatabase.saveAgent(mAgentBean);
+			mHostBean.setAuthAgentId(mAgentBean.getId());
+		}
+		Toast.makeText(mAppContext, R.string.Agent_key_selection_successful, Toast.LENGTH_SHORT).show();
+
+		finish();
 	}
 
 	private PublicKey decodePublicKey(byte[] encodedPublicKey, int algorithmFlag) {

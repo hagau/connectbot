@@ -346,8 +346,6 @@ public class HostEditorFragment extends Fragment {
 									selectKeyFromAgent();
 								} else {
 									mPubkeyText.setText(mPubkeyNames.get(i));
-									// an other option that is not the agent option was selected
-									mListener.onAgentRemoved();
 								}
 								return true;
 							}
@@ -361,20 +359,7 @@ public class HostEditorFragment extends Fragment {
 
 		mPubkeyText = (TextView) view.findViewById(R.id.pubkey_text);
 
-		if (mHost.getPubkeyId() == HostDatabase.PUBKEYID_AGENT) {
-			AgentDatabase agentDatabase = AgentDatabase.get(getContext());
-			AgentBean agentBean = agentDatabase.findAgentById(mHost.getAuthAgentId());
-			if (agentBean != null) {
-				mPubkeyText.setText(getAgentKeyDescription(agentBean));
-			}
-		} else {
-			for (int i = 0; i < mPubkeyValues.size(); i++) {
-				if (mHost.getPubkeyId() == Long.parseLong(mPubkeyValues.get(i))) {
-					mPubkeyText.setText(mPubkeyNames.get(i));
-					break;
-				}
-			}
-		}
+		updatePubKeyDescription();
 
 		mDelKeyItem = view.findViewById(R.id.delkey_item);
 		mDelKeyItem.setOnClickListener(new View.OnClickListener() {
@@ -506,6 +491,23 @@ public class HostEditorFragment extends Fragment {
 		return view;
 	}
 
+	private void updatePubKeyDescription() {
+		if (mHost.getPubkeyId() == HostDatabase.PUBKEYID_AGENT) {
+			AgentDatabase agentDatabase = AgentDatabase.get(getContext());
+			AgentBean agentBean = agentDatabase.findAgentById(mHost.getAuthAgentId());
+			if (agentBean != null) {
+				mPubkeyText.setText(getAgentKeyDescription(agentBean));
+			}
+		} else {
+			for (int i = 0; i < mPubkeyValues.size(); i++) {
+				if (mHost.getPubkeyId() == Long.parseLong(mPubkeyValues.get(i))) {
+					mPubkeyText.setText(mPubkeyNames.get(i));
+					break;
+				}
+			}
+		}
+	}
+
 	private String getAgentKeyDescription(AgentBean agentBean) {
 		return getString(R.string.selected_Agent_res) +" "
 				+ agentBean.getAgentAppName(getContext())
@@ -547,24 +549,14 @@ public class HostEditorFragment extends Fragment {
 	private void selectKey(String agentName) {
 		AgentKeySelection.AgentKeySelectionCallback resultCallback = new AgentKeySelection.AgentKeySelectionCallback() {
 			@Override
-			public void onKeySelectionResult(int resultCode, AgentBean agentBean) {
-				onKeySelected(resultCode, agentBean);
+			public void onKeySelectionUpdate() {
+				if (getActivity() != null) {
+					updatePubKeyDescription();
+				}
 			}
 		};
-		AgentKeySelection keySelectionManager = new AgentKeySelection(getActivity().getApplicationContext(), agentName, resultCallback);
+		AgentKeySelection keySelectionManager = new AgentKeySelection(getActivity().getApplicationContext(), mHost, agentName, resultCallback);
 		keySelectionManager.selectKeyFromAgent();
-	}
-
-	private void onKeySelected(int resultCode, AgentBean agentBean) {
-		if (resultCode == AgentKeySelection.RESULT_CODE_SUCCESS) {
-			mListener.onAgentConfigured(agentBean);
-			mPubkeyText.setText(getAgentKeyDescription(agentBean));
-			Toast.makeText(getContext(), R.string.Agent_key_selection_successful, Toast.LENGTH_SHORT).show();
-		} else if (resultCode == AgentKeySelection.RESULT_CODE_CANCELED) {
-			Toast.makeText(getContext(), R.string.Agent_key_selection_cancelled, Toast.LENGTH_SHORT).show();
-		} else {
-			Toast.makeText(getContext(), R.string.Agent_key_selection_failed, Toast.LENGTH_SHORT).show();
-		}
 	}
 
 	/**
@@ -780,8 +772,6 @@ public class HostEditorFragment extends Fragment {
 	public interface Listener {
 		void onValidHostConfigured(HostBean host);
 		void onHostInvalidated();
-		void onAgentConfigured(AgentBean agentBean);
-		void onAgentRemoved();
 	}
 
 	private class HostTextFieldWatcher implements TextWatcher {

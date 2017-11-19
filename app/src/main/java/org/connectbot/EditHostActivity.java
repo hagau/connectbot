@@ -26,7 +26,6 @@ import org.connectbot.bean.AgentBean;
 import org.connectbot.bean.HostBean;
 import org.connectbot.service.TerminalBridge;
 import org.connectbot.service.TerminalManager;
-import org.connectbot.util.AgentDatabase;
 import org.connectbot.util.HostDatabase;
 import org.connectbot.util.PubkeyDatabase;
 
@@ -56,7 +55,6 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 	private PubkeyDatabase mPubkeyDb;
 	private ServiceConnection mTerminalConnection;
 	private HostBean mHost;
-	private AgentBean mAgentBean;
 	private TerminalBridge mBridge;
 	private boolean mIsCreating;
 	private MenuItem mSaveHostButton;
@@ -211,16 +209,6 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 	}
 
 	@Override
-	public void onAgentConfigured(AgentBean agentBean) {
-		mAgentBean = agentBean;
-	}
-
-	@Override
-	public void onAgentRemoved() {
-		mAgentBean = null;
-	}
-
-	@Override
 	public void onBackPressed() {
 		attemptSaveAndExit();
 	}
@@ -233,18 +221,6 @@ public class EditHostActivity extends AppCompatActivity implements HostEditorFra
 		if (mHost == null) {
 			showDiscardDialog();
 			return;
-		}
-		// check if there has been an agent selected
-		if (mAgentBean != null) {
-			AgentDatabase agentDatabase = AgentDatabase.get(getApplicationContext());
-			// delete the old one
-			long oldAgentId = mHost.getAuthAgentId();
-			if (oldAgentId != HostDatabase.AGENTID_NONE) {
-				agentDatabase.deleteAgentById(oldAgentId);
-			}
-			// save the new one
-			agentDatabase.saveAgent(mAgentBean);
-			mHost.setAuthAgentId(mAgentBean.getId());
 		}
 
 		mHostDb.saveHost(mHost);
